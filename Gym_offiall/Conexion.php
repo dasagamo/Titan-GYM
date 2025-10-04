@@ -1,7 +1,15 @@
 <?php
-// Nombre de host, usuario, contraseña y base de datos
+// Datos de conexión
 $servidor   = 'localhost';
 $usuario    = 'root';
-$contrasena = '1212';       // Cambia “1212” a tu contraseña real
-$baseDatos  = 'gymdb';       // Debe coincidir con el nombre creado en phpMyAdmin
+$contrasena = '1212';   // tu contraseña real
+$baseDatos  = 'gymdb';  // nombre real de la BD
 
+// Crear conexión
+$conn = new mysqli($servidor, $usuario, $contrasena, $baseDatos);
+
+// Verificar conexión
+if ($conn->connect_error) {
+    die("Error de conexión: " . $conn->connect_error);
+}
+?>
