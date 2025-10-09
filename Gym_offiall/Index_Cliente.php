@@ -17,7 +17,7 @@
       <div></div>
       <div></div>
     </div>
-    <h1>Gimnasio Fitness Pro</h1>
+    <h1>Títan GYM</h1>
   </header>
 
   <!-- Menú lateral -->
