@@ -1,90 +1,97 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Tìtan GYM</title>
-  <link rel="stylesheet" href="Desing/Style_Index.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Titan GYM</title>
+  <link rel="stylesheet" href="Style_Index.css">
+  <!-- Íconos de redes -->
+  <script src="https://kit.fontawesome.com/6c5b55f7a3.js" crossorigin="anonymous"></script>
 </head>
 <body>
 
-  <header class="site-header">
-    <!-- Contenedor del botón y menú -->
-    <div class="menu-container">
-      <button class="menu-btn" id="menuToggle" aria-label="Abrir menú">
-        <span class="hamb"></span>
-        <span class="hamb"></span>
-        <span class="hamb"></span>
-      </button>
-
-      <nav class="main-nav" id="mainNav">
-        <ul>
-          <li><a href="#">Inscríbete</a></li>
-          <li><a href="#">Promociones</a></li>
-          <li><a href="#">Tienda</a></li>
-          <li><a href="#">Clases</a></li>
-          <li><a href="#">Clase personalizada</a></li>
-          <li><a href="#" class="login-btn">Iniciar sesión</a></li>
-        </ul>
-      </nav>
+  <!-- Encabezado -->
+  <header>
+    <div class="menu-btn" id="menu-btn">
+      <div></div>
+      <div></div>
+      <div></div>
     </div>
-
-    <!-- Título -->
-    <h1 class="gym-title">Tìtan GYM</h1>
+    <h1>Gimnasio Fitness Pro</h1>
   </header>
 
-  <main class="container">
-    <section class="hero">
-      <h2>Planes</h2>
-    </section>
+  <!-- Menú lateral -->
+  <nav id="menu">
+    <a href="#"><i class="fas fa-tags"></i> Promociones</a>
+    <a href="#"><i class="fas fa-store"></i> Tienda</a>
+    <a href="#"><i class="fas fa-dumbbell"></i> Clases Promocionales</a>
+    <a href="#"><i class="fas fa-user-friends"></i> Clase Personalizada</a>
+    <a href="#"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a>
 
-    <section class="plans">
-      <article class="plan-card">
-        <h3>Plan 1</h3>
-        <p class="price">$XX.XXX</p>
-        <button class="cta">Ver</button>
-      </article>
+    <!-- Botón especial al final -->
+    <a href="#" class="btn-inscribirse"><i class="fas fa-user-plus"></i> Inscríbete</a>
+  </nav>
 
-      <article class="plan-card">
-        <h3>Plan 2</h3>
-        <p class="price">$XX.XXX</p>
-        <button class="cta">Ver</button>
-      </article>
-
-      <article class="plan-card">
-        <h3>Plan 3</h3>
-        <p class="price">$XX.XXX</p>
-        <button class="cta">Ver</button>
-      </article>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <div class="footer-grid">
-      <div class="col">
-        <h3>Contacto</h3>
-        <p>Tel: 300 000 0000<br>Correo: info@ejemplo.com</p>
-      </div>
-
-      <div class="col center">
-        <h3>Síguenos</h3>
-        <div class="socials">
-          <a class="social" aria-label="Facebook"><span>f</span></a>
-          <a class="social" aria-label="Instagram"><span>ig</span></a>
-          <a class="social" aria-label="Whatsapp"><span>wa</span></a>
-        </div>
-      </div>
-
-      <div class="col">
-        <h3>Quiénes somos</h3>
-        <p>Breve texto sobre la empresa / proyecto.</p>
-      </div>
+  <!-- Sección de planes -->
+  <section class="planes">
+    <div class="plan">
+      <h2>Plan 1</h2>
+      <p>Acceso básico al gimnasio</p>
     </div>
+    <div class="plan destacado">
+      <h2>Plan 2</h2>
+      <p>Clases grupales + zona de pesas</p>
+    </div>
+    <div class="plan">
+      <h2>Plan 3</h2>
+      <p>Plan premium con entrenador personal</p>
+    </div>
+  </section>
 
-    <div class="footer-bottom">
-      <a href="#">Preguntas frecuentes</a>
+  <!-- Pie de página -->
+  <footer>
+    <div class="links">
+      <a href="#">Contacto</a> |
+      <a href="#">Quiénes Somos</a> |
+      <a href="#">Preguntas Frecuentes</a>
+    </div>
+    <p>Síguenos</p>
+    <div class="social-icons">
+      <a href="#"><i class="fab fa-facebook-f"></i></a>
+      <a href="#"><i class="fab fa-instagram"></i></a>
+      <a href="#"><i class="fab fa-whatsapp"></i></a>
     </div>
   </footer>
 
+  <!-- Script dentro del HTML -->
+  <script>
+    const menuBtn = document.getElementById('menu-btn');
+    const menu = document.getElementById('menu');
+
+    // Alternar el menú
+    menuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menu.classList.toggle('active');
+      menuBtn.classList.toggle('open');
+    });
+
+    // Cerrar el menú al hacer clic fuera
+    document.addEventListener('click', (e) => {
+      if (!menu.contains(e.target) && !menuBtn.contains(e.target)) {
+        menu.classList.remove('active');
+        menuBtn.classList.remove('open');
+      }
+    });
+
+    // Cerrar el menú al hacer clic en un enlace
+    menu.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        menu.classList.remove('active');
+        menuBtn.classList.remove('open');
+      });
+    });
+  </script>
+
 </body>
 </html>
+
