@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Titan GYM</title>
-  <link rel="stylesheet" href="Style_Index.css">
+  <link rel="stylesheet" href="Desing/Style_Index.css">
   <!-- Íconos de redes -->
   <script src="https://kit.fontawesome.com/6c5b55f7a3.js" crossorigin="anonymous"></script>
 </head>
@@ -26,10 +26,10 @@
     <a href="#"><i class="fas fa-store"></i> Tienda</a>
     <a href="#"><i class="fas fa-dumbbell"></i> Clases Promocionales</a>
     <a href="#"><i class="fas fa-user-friends"></i> Clase Personalizada</a>
-    <a href="#"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a>
+    <a href="forms/Inicio_Secion.php"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a>
 
     <!-- Botón especial al final -->
-    <a href="#" class="btn-inscribirse"><i class="fas fa-user-plus"></i> Inscríbete</a>
+    <a href="forms/Inscripcion.php" class="btn-inscribirse"><i class="fas fa-user-plus"></i> Inscríbete</a>
   </nav>
 
   <!-- Sección de planes -->

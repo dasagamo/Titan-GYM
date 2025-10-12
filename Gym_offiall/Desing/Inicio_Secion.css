@@ -1,0 +1,89 @@
+/* style_login.css */
+
+body {
+    margin: 0;
+    font-family: "Poppins", sans-serif;
+    background: linear-gradient(135deg, #0a0a0a, #2b2b2b);
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.login-container {
+    background-color: rgba(255, 255, 255, 0.08);
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 4px 25px rgba(255, 0, 0, 0.4);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.login-container h1 {
+    color: #ff1e1e;
+    margin-bottom: 30px;
+    font-size: 2em;
+    letter-spacing: 1px;
+}
+
+.input-group {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    font-weight: bold;
+    color: #ccc;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background-color: #1e1e1e;
+    color: white;
+    font-size: 1em;
+    outline: none;
+    transition: 0.3s;
+}
+
+.input-group input:focus {
+    box-shadow: 0 0 8px #ff1e1e;
+}
+
+.btn-login {
+    background-color: #ff1e1e;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    width: 100%;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-login:hover {
+    background-color: #e60000;
+    box-shadow: 0 0 12px #ff1e1e;
+}
+
+.registro-texto {
+    margin-top: 15px;
+    color: #ccc;
+}
+
+.registro-texto a {
+    color: #ff1e1e;
+    text-decoration: none;
+}
+
+.registro-texto a:hover {
+    text-decoration: underline;
+}
