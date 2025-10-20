@@ -1,10 +1,10 @@
 <?php
 session_start();
-include 'Conexion.php';
+include 'conexion.php';
 
 // Verificar si el cliente está logueado
 if (!isset($_SESSION['id_cliente'])) {
-    header("Location: Inicio_Secion.php");
+    header("Location: forms/Inicio_Secion.php");
     exit();
 }
 
@@ -12,104 +12,146 @@ $id_cliente = $_SESSION['id_cliente'];
 
 // —————— OBTENER NOMBRE DEL CLIENTE ——————
 try {
-    $stmtNombre = $conexion->prepare("
-        SELECT Nombre, Apellido
-        FROM cliente
-        WHERE ID_Cliente = :idCliente
-        LIMIT 1
-    ");
-    $stmtNombre->bindParam(':idCliente', $id_cliente, PDO::PARAM_INT);
-    $stmtNombre->execute();
-    $filaCliente = $stmtNombre->fetch(PDO::FETCH_ASSOC);
-    if ($filaCliente) {
-        $nombreCompleto = $filaCliente['Nombre'] . ' ' . $filaCliente['Apellido'];
+    $stmt = mysqli_prepare($conexion, "SELECT Nombre, Apellido FROM cliente WHERE Id_Cliente = ? LIMIT 1");
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "i", $id_cliente);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $filaCliente = mysqli_fetch_assoc($result);
+        
+        if ($filaCliente) {
+            $nombreCompleto = $filaCliente['Nombre'] . ' ' . $filaCliente['Apellido'];
+        } else {
+            $nombreCompleto = "Cliente #" . $id_cliente;
+        }
+        mysqli_stmt_close($stmt);
     } else {
         $nombreCompleto = "Cliente #" . $id_cliente;
     }
-} catch (PDOException $e) {
+} catch (Exception $e) {
     $nombreCompleto = "Cliente #" . $id_cliente;
 }
-// —————————————————————————————————————————
 
-// Función que verifica si la membresía del cliente está vigente y retorna Fecha_Fin
-function obtenerFechaFin($idCliente, $conexion) {
-    $stmt = $conexion->prepare("
-        SELECT Fecha_Fin
-        FROM membresia
-        WHERE ID_Cliente = :idCliente
-        ORDER BY Fecha_Fin DESC
+// —————— OBTENER ESTADO DE MEMBRESÍA ——————
+function obtenerEstadoMembresia($idCliente, $conexion) {
+    $stmt = mysqli_prepare($conexion, "
+        SELECT m.Fecha_Fin, tm.Nombre_Tipo, m.Duexion as Duracion
+        FROM membrecia m 
+        JOIN cliente c ON m.Id_Membrecia = c.Id_Membrecia 
+        JOIN tipo_membrecia tm ON m.Id_Tipo_Membrecia = tm.Id_Tipo_Membrecia 
+        WHERE c.Id_Cliente = ? 
         LIMIT 1
     ");
-    $stmt->bindParam(':idCliente', $idCliente, PDO::PARAM_INT);
-    $stmt->execute();
-    return $stmt->fetch(PDO::FETCH_ASSOC)['Fecha_Fin'] ?? null;
+    
+    if (!$stmt) return ['vigente' => false, 'fecha_fin' => null, 'tipo' => null, 'duracion' => null];
+    
+    mysqli_stmt_bind_param($stmt, "i", $idCliente);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $fila = mysqli_fetch_assoc($result);
+    mysqli_stmt_close($stmt);
+    
+    if ($fila && $fila['Fecha_Fin']) {
+        $vigente = strtotime($fila['Fecha_Fin']) >= time();
+        return [
+            'vigente' => $vigente,
+            'fecha_fin' => $fila['Fecha_Fin'],
+            'tipo' => $fila['Nombre_Tipo'],
+            'duracion' => $fila['Duracion']
+        ];
+    }
+    
+    return ['vigente' => false, 'fecha_fin' => null, 'tipo' => null, 'duracion' => null];
 }
 
-// Función que calcula recargo por semanas de demora (100 por semana). Retorna [semanas, monto].
+// —————— CALCULAR RECARGO ——————
 function calcularRecargo($fechaFin) {
     if (!$fechaFin) return [0, 0];
+    
     $hoy = new DateTime();
     $fin = new DateTime($fechaFin);
+    
     if ($fin < $hoy) {
         $interval = $fin->diff($hoy);
         $diasDemora = $interval->days;
-        $semanas = floor($diasDemora / 7);
+        $semanas = ceil($diasDemora / 7);
         $recargo = $semanas * 100;
         return [$semanas, $recargo];
     }
+    
     return [0, 0];
 }
 
-$fechaFin = obtenerFechaFin($id_cliente, $conexion);
-$miMembresiaVigente = false;
-if ($fechaFin) {
-    $miMembresiaVigente = strtotime($fechaFin) >= time();
-}
+// Obtener estado de membresía
+$estadoMembresia = obtenerEstadoMembresia($id_cliente, $conexion);
+$miMembresiaVigente = $estadoMembresia['vigente'];
+$fechaFin = $estadoMembresia['fecha_fin'];
+$tipoMembresia = $estadoMembresia['tipo'];
+$duracionMembresia = $estadoMembresia['duracion'];
 
-// 2) Obtener las clases disponibles (cupo < cupo máximo)
+// —————— OBTENER CLASES DISPONIBLES ——————
+$clasesDisponibles = [];
 try {
-    $stmtDisponibles = $conexion->prepare("
-        SELECT c.ID_Clase, c.Nombre, c.Horario, c.Cupo_Maximo, 
-               COUNT(cc.ID_Cliente) AS Inscritos
+    $query = "
+        SELECT c.Id_Clase, c.Nombre, c.Horario, c.Cupo_Maximo, 
+               COUNT(cc.Id_Cliente) AS Inscritos
         FROM clase c
-        LEFT JOIN cliente_clase cc ON c.ID_Clase = cc.ID_Clase
-        GROUP BY c.ID_Clase
+        LEFT JOIN cliente_clase cc ON c.Id_Clase = cc.Id_Clase
+        GROUP BY c.Id_Clase
         HAVING Inscritos < c.Cupo_Maximo
-    ");
-    $stmtDisponibles->execute();
-    $clasesDisponibles = $stmtDisponibles->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    die("Error en la base de datos al obtener clases disponibles: " . $e->getMessage());
+    ";
+    $result = mysqli_query($conexion, $query);
+    if ($result) {
+        $clasesDisponibles = mysqli_fetch_all($result, MYSQLI_ASSOC);
+    }
+} catch (Exception $e) {
+    error_log("Error al obtener clases disponibles: " . $e->getMessage());
 }
 
-// 3) Obtener las clases en las que el cliente ya está inscrito
+// —————— OBTENER CLASES INSCRITAS ——————
+$clasesInscritas = [];
 try {
-    $stmtInscrito = $conexion->prepare("
-        SELECT c.ID_Clase, c.Nombre, c.Horario
+    $stmt = mysqli_prepare($conexion, "
+        SELECT c.Id_Clase, c.Nombre, c.Horario
         FROM clase c
-        INNER JOIN cliente_clase cc ON c.ID_Clase = cc.ID_Clase
-        WHERE cc.ID_Cliente = :idCliente
+        INNER JOIN cliente_clase cc ON c.Id_Clase = cc.Id_Clase
+        WHERE cc.Id_Cliente = ?
     ");
-    $stmtInscrito->bindParam(':idCliente', $id_cliente, PDO::PARAM_INT);
-    $stmtInscrito->execute();
-    $clasesInscritas = $stmtInscrito->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    die("Error en la base de datos al obtener clases inscritas: " . $e->getMessage());
+    
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "i", $id_cliente);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $clasesInscritas = mysqli_fetch_all($result, MYSQLI_ASSOC);
+        mysqli_stmt_close($stmt);
+    }
+} catch (Exception $e) {
+    error_log("Error al obtener clases inscritas: " . $e->getMessage());
 }
 
-// 4) Consultar el último código generado para este cliente
-$stmtCod = $conexion->prepare("
-    SELECT Codigo, Fecha_Generado
-    FROM acceso
-    WHERE ID_Cliente = :idCliente
-    ORDER BY Fecha_Generado DESC
-    LIMIT 1
-");
-$stmtCod->bindParam(':idCliente', $id_cliente, PDO::PARAM_INT);
-$stmtCod->execute();
-$ultimo = $stmtCod->fetch(PDO::FETCH_ASSOC);
+// —————— OBTENER CÓDIGO QR ——————
+$ultimo = null;
+try {
+    $stmt = mysqli_prepare($conexion, "
+        SELECT Codigo, Fecha_Generado, Estado_Accesso
+        FROM accesso 
+        WHERE Id_Cliente = ? AND Estado_Accesso = 'activo'
+        ORDER BY Fecha_Generado DESC 
+        LIMIT 1
+    ");
+    
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "i", $id_cliente);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $ultimo = mysqli_fetch_assoc($result);
+        mysqli_stmt_close($stmt);
+    }
+} catch (Exception $e) {
+    error_log("Error al obtener código de acceso: " . $e->getMessage());
+}
 
-// 5) Mensajes de sesión
+// —————— MENSAJES DE SESIÓN ——————
 $mensaje_exito = $_SESSION['mensaje_exito'] ?? '';
 $mensaje_error = $_SESSION['mensaje_error'] ?? '';
 unset($_SESSION['mensaje_exito'], $_SESSION['mensaje_error']);
@@ -134,7 +176,7 @@ unset($_SESSION['mensaje_exito'], $_SESSION['mensaje_error']);
             </div>
             <h1>GYM PANEL</h1>
         </div>
-        <form action="index.php" method="post">
+        <form action="cerrar_sesion.php" method="post">
             <button type="submit" class="btn btn-cerrar">
                 <i class="fas fa-sign-out-alt"></i> Salir
             </button>
@@ -174,9 +216,13 @@ unset($_SESSION['mensaje_exito'], $_SESSION['mensaje_error']);
                     <?= $miMembresiaVigente ? 'ACTIVO' : 'INACTIVO' ?>
                 </span>
             </h2>
-            <div class="user-actions">
-                <!-- Espacio para acciones adicionales del usuario -->
-            </div>
+            <?php if ($miMembresiaVigente && $tipoMembresia): ?>
+                <div class="user-actions">
+                    <p><strong>Membresía:</strong> <?= htmlspecialchars($tipoMembresia) ?></p>
+                    <p><strong>Duración:</strong> <?= $duracionMembresia ?> días</p>
+                    <p><strong>Vence:</strong> <?= date('d-m-Y', strtotime($fechaFin)) ?></p>
+                </div>
+            <?php endif; ?>
         </div>
 
         <?php if ($miMembresiaVigente): ?>
@@ -199,7 +245,7 @@ unset($_SESSION['mensaje_exito'], $_SESSION['mensaje_error']);
                                     <td><?= date('d-m-Y H:i', strtotime($clase['Horario'])) ?></td>
                                     <td>
                                         <form action="cancelar_clase.php" method="POST" style="display: inline;">
-                                            <input type="hidden" name="id_clase" value="<?= $clase['ID_Clase'] ?>">
+                                            <input type="hidden" name="id_clase" value="<?= $clase['Id_Clase'] ?>">
                                             <button class="btn btn-cancelar" type="submit">
                                                 <i class="fas fa-times"></i> Cancelar
                                             </button>
@@ -237,7 +283,7 @@ unset($_SESSION['mensaje_exito'], $_SESSION['mensaje_error']);
                                     <td><?= ($clase['Cupo_Maximo'] - $clase['Inscritos']) . ' / ' . $clase['Cupo_Maximo'] ?></td>
                                     <td>
                                         <form action="inscribirse_clase.php" method="POST" style="display: inline;">
-                                            <input type="hidden" name="id_clase" value="<?= $clase['ID_Clase'] ?>">
+                                            <input type="hidden" name="id_clase" value="<?= $clase['Id_Clase'] ?>">
                                             <button class="btn" type="submit">
                                                 <i class="fas fa-plus"></i> Inscribirse
                                             </button>
@@ -261,12 +307,17 @@ unset($_SESSION['mensaje_exito'], $_SESSION['mensaje_error']);
                     <div style="margin-bottom: 20px;">
                         <p><strong>Código:</strong> <?= htmlspecialchars($ultimo['Codigo']) ?></p>
                         <p><strong>Fecha de generación:</strong> <?= htmlspecialchars($ultimo['Fecha_Generado']) ?></p>
+                        <p><strong>Estado:</strong> 
+                            <span class="status-badge <?= $ultimo['Estado_Accesso'] == 'activo' ? 'status-active' : 'status-inactive' ?>">
+                                <?= strtoupper($ultimo['Estado_Accesso']) ?>
+                            </span>
+                        </p>
                     </div>
                     <?php
-                    $rutaQR = __DIR__ . '/qrcodes/' . $id_cliente . '.png';
+                    $rutaQR = 'qrcodes/' . $id_cliente . '.png';
                     if (file_exists($rutaQR)): ?>
                         <img
-                            src="qrcodes/<?= htmlspecialchars($id_cliente) ?>.png"
+                            src="<?= $rutaQR ?>"
                             alt="Código QR"
                             class="codigo-qr"
                         >
@@ -291,7 +342,11 @@ unset($_SESSION['mensaje_exito'], $_SESSION['mensaje_error']);
             <!-- ========== SECCIÓN: MEMBRESÍA VENCIDA ========== -->
             <div class="aviso">
                 <h3><i class="fas fa-exclamation-triangle"></i> Suscripción Caducada</h3>
-                <p>Tu membresía venció el <strong><?= $fechaFin ? date('d-m-Y', strtotime($fechaFin)) : 'N/A' ?></strong>.</p>
+                <?php if ($fechaFin): ?>
+                    <p>Tu membresía venció el <strong><?= date('d-m-Y', strtotime($fechaFin)) ?></strong>.</p>
+                <?php else: ?>
+                    <p>No tienes una membresía activa.</p>
+                <?php endif; ?>
                 <p>Hoy es <strong><?= $hoyFormateado ?></strong>.</p>
                 <?php if ($montoRecargo > 0): ?>
                     <p>Multa acumulada: <strong>$<?= number_format($montoRecargo, 2) ?></strong> (<?= $semanasAtraso ?> semana<?= $semanasAtraso != 1 ? 's' : '' ?>).</p>

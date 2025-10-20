@@ -1,19 +1,14 @@
-
 <?php
-// Datos de conexión al servidor MySQL
-$servidor = "localhost";   // Servidor local (XAMPP)
-$usuario = "root";         // Usuario por defecto en XAMPP
-$contrasena = "1212";          // En XAMPP, normalmente no hay contraseña
-$base_datos = "gymdb"; // Nombre de tu base de datos
+$servername = "localhost";
+$username = "root";
+$password = "1212";
+$database = "gymdb";
 
-// Crear la conexión
-$conexion = mysqli_connect($servidor, $usuario, $contrasena, $base_datos);
+// Crear conexión MySQLi
+$conexion = mysqli_connect($servername, $username, $password, $database);
 
-// Verificar si la conexión fue exitosa
+// Verificar conexión
 if (!$conexion) {
-    die("❌ Error al conectar con la base de datos: " . mysqli_connect_error());
+    die("Error de conexión: " . mysqli_connect_error());
 }
-
-// Si quieres confirmar visualmente que se conectó (solo para pruebas):
-// echo "✅ Conexión exitosa";
 ?>

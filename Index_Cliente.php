@@ -26,7 +26,7 @@
     <a href="#"><i class="fas fa-store"></i> Tienda</a>
     <a href="#"><i class="fas fa-dumbbell"></i> Clases Promocionales</a>
     <a href="#"><i class="fas fa-user-friends"></i> Clase Personalizada</a>
-    <a href="forms/Inicio_Secion.php"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a>
+    <a href="forms/login.php"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a>
 
     <!-- Botón especial al final -->
     <a href="forms/Inscripcion.php" class="btn-inscribirse"><i class="fas fa-user-plus"></i> Inscríbete</a>
@@ -35,16 +35,19 @@
   <!-- Sección de planes -->
   <section class="planes">
     <div class="plan">
-      <h2>Plan 1</h2>
+      <h2>Plan Básico</h2>
       <p>Acceso básico al gimnasio</p>
+      <span class="precio">$50/mes</span>
     </div>
     <div class="plan destacado">
-      <h2>Plan 2</h2>
+      <h2>Plan Premium</h2>
       <p>Clases grupales + zona de pesas</p>
+      <span class="precio">$80/mes</span>
     </div>
     <div class="plan">
-      <h2>Plan 3</h2>
+      <h2>Plan Elite</h2>
       <p>Plan premium con entrenador personal</p>
+      <span class="precio">$120/mes</span>
     </div>
   </section>
 
@@ -94,4 +97,3 @@
 
 </body>
 </html>
-
