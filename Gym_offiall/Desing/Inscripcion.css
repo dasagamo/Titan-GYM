@@ -119,3 +119,14 @@ form {
 .mensaje a:hover {
   text-decoration: underline;
 }
+
+
+.caracteres-info {
+font-size: 0.8rem;
+margin-top: 0.3rem;
+display: block;
+}
+small {
+font-size: 0.8rem;
+opacity: 0.8;
+}

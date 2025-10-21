@@ -1,231 +1,48 @@
-:root {
-  --fondo: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-  --blanco: #ffffff;
-  --acento: #e50914;
-  --gris: #ccc;
-  --sombra: 0 4px 12px rgba(0, 0, 0, 0.25);
-  --transicion: 0.3s ease;
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: 'Poppins', sans-serif;
-}
-
-body {
-  background: var(--fondo);
-  color: var(--blanco);
-  min-height: 100vh;
-}
-
-/* === Encabezado === */
-header {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 20px 25px;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(5px);
-  box-shadow: var(--sombra);
-}
-
-header h1 {
-  font-size: 1.5rem;
-  letter-spacing: 1px;
-  font-weight: 600;
-}
-
-/* === Botón hamburguesa === */
-.menu-btn {
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  width: 28px;
-  height: 20px;
-  margin-right: 20px;
-  transition: var(--transicion);
-}
-
-.menu-btn div {
-  height: 3px;
-  background: var(--blanco);
-  border-radius: 2px;
-  transition: var(--transicion);
-}
-
-/* Animación del botón */
-.menu-btn.open div:nth-child(1) {
-  transform: rotate(45deg) translate(5px, 5px);
-}
-
-.menu-btn.open div:nth-child(2) {
-  opacity: 0;
-}
-
-.menu-btn.open div:nth-child(3) {
-  transform: rotate(-45deg) translate(5px, -5px);
-}
-
-/* === Menú lateral === */
-nav {
-  position: fixed;
-  top: 0;
-  left: -260px;
-  width: 240px;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  padding-top: 80px;
-  display: flex;
-  flex-direction: column;
-  transition: var(--transicion);
-  box-shadow: var(--sombra);
-}
-
-nav.active {
-  left: 0;
-}
-
-nav a {
-  padding: 14px 25px;
-  color: var(--blanco);
-  text-decoration: none;
-  font-weight: 500;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  transition: background 0.2s;
-}
-
-nav a i {
-  margin-right: 10px;
+/* === Precios en los planes === */
+.plan .precio {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: bold;
   color: var(--acento);
+  margin-top: 15px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-nav a:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* === Planes === */
-.planes {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  padding: 80px 20px;
-  flex-wrap: wrap;
-}
-
-.plan {
-  background: rgba(255, 255, 255, 0.08);
-  padding: 30px;
-  border-radius: 16px;
-  width: 28%;
-  min-width: 250px;
-  margin: 15px;
-  box-shadow: var(--sombra);
-  transition: all 0.3s ease;
-  text-align: center;
-  cursor: pointer;
-  border: 2px solid transparent;
-}
-
-.plan h2 {
-  color: var(--acento);
-  margin-bottom: 10px;
-  font-size: 1.4rem;
-}
-
-.plan p {
-  color: var(--gris);
-  font-size: 0.95rem;
-}
-
-/* === Efecto hover con borde rojo === */
-.plan:hover {
-  border-color: var(--acento);
-  transform: translateY(-6px);
-  box-shadow: 0 8px 20px rgba(229, 9, 20, 0.3);
-}
-
-/* Plan destacado (ligeramente más grande) */
+/* === Mejora visual para planes destacados === */
 .destacado {
   border: 2px solid var(--acento);
   transform: scale(1.05);
+  position: relative;
+  overflow: hidden;
 }
 
-
-/* === Pie de página === */
-footer {
-  background: rgba(0, 0, 0, 0.8);
-  color: var(--blanco);
-  text-align: center;
-  padding: 40px 20px;
-  box-shadow: inset 0 2px 10px rgba(255, 255, 255, 0.05);
-}
-
-footer .links {
-  margin-bottom: 15px;
-}
-
-footer a {
-  color: var(--gris);
-  margin: 0 10px;
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s;
-}
-
-footer a:hover {
-  color: var(--acento);
-}
-
-footer p {
-  margin-top: 10px;
-  font-weight: 600;
-  letter-spacing: 1px;
-}
-
-.social-icons {
-  margin-top: 15px;
-}
-
-.social-icons a {
-  display: inline-block;
-  margin: 0 10px;
+.destacado::before {
+  content: 'MÁS POPULAR';
+  position: absolute;
+  top: 10px;
+  right: -30px;
   background: var(--acento);
-  color: var(--blanco);
-  padding: 12px;
-  border-radius: 50%;
-  font-size: 18px;
-  transition: transform 0.3s, background 0.3s;
+  color: white;
+  padding: 5px 30px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  transform: rotate(45deg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.social-icons a:hover {
-  background: #b0060f;
-  transform: translateY(-5px);
-}
-
-/* === Botón Inscríbete === */
-.btn-inscribirse {
-  background-color: var(--acento);
-  color: var(--blanco);
-  margin: 25px auto;
-  padding: 12px 20px;
-  border-radius: 25px;
-  text-align: center;
-  width: 70%;
-  font-weight: 600;
-  transition: background 0.3s, transform 0.2s;
-  border: 2px solid var(--acento);
-}
-
-.btn-inscribirse i {
-  margin-right: 8px;
-}
-
-.btn-inscribirse:hover {
-  background: transparent;
-  color: var(--acento);
-  transform: translateY(-2px);
+/* === Responsive mejorado === */
+@media (max-width: 768px) {
+  .planes {
+    padding: 60px 15px;
+  }
+  
+  .plan {
+    width: 100%;
+    max-width: 300px;
+    margin: 10px auto;
+  }
+  
+  .destacado {
+    transform: scale(1.02);
+  }
 }
