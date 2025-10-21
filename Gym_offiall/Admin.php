@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modulo'])) {
     $accion = $_POST['accion'];
 
     switch ($modulo) {
-        // CLIENTES
+        // CLIENTES - ACTUALIZADO CON MEMBRESÍAS
         case 'clientes':
             if ($accion === 'crear') {
                 $nombre = mysqli_real_escape_string($conexion, $_POST['nombre']);
@@ -60,29 +60,98 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modulo'])) {
                 $telefono = mysqli_real_escape_string($conexion, $_POST['telefono']);
                 $correo = mysqli_real_escape_string($conexion, $_POST['correo']);
                 $pass = password_hash($_POST['contrasena'], PASSWORD_BCRYPT);
+                $id_tipo_membrecia = !empty($_POST['id_tipo_membrecia']) ? (int)$_POST['id_tipo_membrecia'] : NULL;
                 
+                // Insertar cliente
                 mysqli_query($conexion, "INSERT INTO cliente (Nombre, Apellido, Telefono, Correo, Contrasena, Id_Tipo) 
                                        VALUES ('$nombre', '$apellido', '$telefono', '$correo', '$pass', 3)");
+                
+                $id_cliente = mysqli_insert_id($conexion);
+                
+                // Si se seleccionó un tipo de membresía, crear la membresía
+                if ($id_tipo_membrecia) {
+                    // Obtener la duración del tipo de membresía
+                    $result_tipo = mysqli_query($conexion, "SELECT Duracion FROM tipo_membrecia WHERE Id_Tipo_Membrecia = $id_tipo_membrecia");
+                    $tipo = mysqli_fetch_assoc($result_tipo);
+                    $duracion = $tipo['Duracion'] ?: 30; // Si no tiene duración, 30 días por defecto
+
+                    $fecha_inicio = date('Y-m-d');
+                    $fecha_fin = date('Y-m-d', strtotime("+$duracion days"));
+                    
+                    mysqli_query($conexion, "INSERT INTO membrecia (Id_Cliente, Id_Tipo_Membrecia, Duracion, Fecha_Inicio, Fecha_Fin) 
+                                           VALUES ($id_cliente, $id_tipo_membrecia, $duracion, '$fecha_inicio', '$fecha_fin')");
+                    
+                    // Actualizar el cliente con la membresía
+                    mysqli_query($conexion, "UPDATE cliente SET Id_Membrecia = LAST_INSERT_ID() WHERE Id_Cliente = $id_cliente");
+                }
             } elseif ($accion === 'editar') {
                 $id = (int)$_POST['id'];
                 $nombre = mysqli_real_escape_string($conexion, $_POST['nombre']);
                 $apellido = mysqli_real_escape_string($conexion, $_POST['apellido']);
                 $telefono = mysqli_real_escape_string($conexion, $_POST['telefono']);
                 $correo = mysqli_real_escape_string($conexion, $_POST['correo']);
+                $id_tipo_membrecia = !empty($_POST['id_tipo_membrecia']) ? (int)$_POST['id_tipo_membrecia'] : NULL;
                 
+                // Actualizar datos del cliente
                 mysqli_query($conexion, "UPDATE cliente SET 
                     Nombre = '$nombre',
                     Apellido = '$apellido',
                     Telefono = '$telefono',
                     Correo = '$correo'
                     WHERE Id_Cliente = $id");
+                
+                // Manejar la membresía
+                if ($id_tipo_membrecia) {
+                    // Verificar si ya tiene una membresía
+                    $membrecia_existente = mysqli_query($conexion, "SELECT Id_Membrecia FROM cliente WHERE Id_Cliente = $id");
+                    $cliente = mysqli_fetch_assoc($membrecia_existente);
+                    
+                    if ($cliente['Id_Membrecia']) {
+                        // Obtener la duración del tipo de membresía
+                        $result_tipo = mysqli_query($conexion, "SELECT Duracion FROM tipo_membrecia WHERE Id_Tipo_Membrecia = $id_tipo_membrecia");
+                        $tipo = mysqli_fetch_assoc($result_tipo);
+                        $duracion = $tipo['Duracion'] ?: 30;
+
+                        $fecha_inicio = date('Y-m-d');
+                        $fecha_fin = date('Y-m-d', strtotime("+$duracion days"));
+                        
+                        // Actualizar membresía existente
+                        mysqli_query($conexion, "UPDATE membrecia SET 
+                            Id_Tipo_Membrecia = $id_tipo_membrecia,
+                            Duracion = $duracion,
+                            Fecha_Inicio = '$fecha_inicio',
+                            Fecha_Fin = '$fecha_fin'
+                            WHERE Id_Membrecia = {$cliente['Id_Membrecia']}");
+                    } else {
+                        // Obtener la duración del tipo de membresía
+                        $result_tipo = mysqli_query($conexion, "SELECT Duracion FROM tipo_membrecia WHERE Id_Tipo_Membrecia = $id_tipo_membrecia");
+                        $tipo = mysqli_fetch_assoc($result_tipo);
+                        $duracion = $tipo['Duracion'] ?: 30;
+
+                        $fecha_inicio = date('Y-m-d');
+                        $fecha_fin = date('Y-m-d', strtotime("+$duracion days"));
+                        
+                        // Crear nueva membresía
+                        mysqli_query($conexion, "INSERT INTO membrecia (Id_Cliente, Id_Tipo_Membrecia, Duracion, Fecha_Inicio, Fecha_Fin) 
+                                               VALUES ($id, $id_tipo_membrecia, $duracion, '$fecha_inicio', '$fecha_fin')");
+                        
+                        mysqli_query($conexion, "UPDATE cliente SET Id_Membrecia = LAST_INSERT_ID() WHERE Id_Cliente = $id");
+                    }
+                } else {
+                    // Si no se selecciona membresía, eliminar la existente
+                    mysqli_query($conexion, "DELETE FROM membrecia WHERE Id_Cliente = $id");
+                    mysqli_query($conexion, "UPDATE cliente SET Id_Membrecia = NULL WHERE Id_Cliente = $id");
+                }
             } elseif ($accion === 'eliminar') {
                 $id = (int)$_POST['id'];
+                // Primero eliminar la membresía si existe
+                mysqli_query($conexion, "DELETE FROM membrecia WHERE Id_Cliente = $id");
+                // Luego eliminar el cliente
                 mysqli_query($conexion, "DELETE FROM cliente WHERE Id_Cliente = $id");
             }
             break;
 
-        // ENTRENADORES - CORREGIDO CON CONTRASEÑA
+        // ENTRENADORES
         case 'entrenadores':
             if ($accion === 'crear') {
                 $nombre = mysqli_real_escape_string($conexion, $_POST['nombre']);
@@ -102,7 +171,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modulo'])) {
                 $correo = mysqli_real_escape_string($conexion, $_POST['correo']);
                 $id_especialidad = (int)$_POST['id_especialidad'];
                 
-                // Si se proporciona nueva contraseña, actualizarla
                 if (!empty($_POST['contrasena'])) {
                     $contrasena = password_hash($_POST['contrasena'], PASSWORD_BCRYPT);
                     mysqli_query($conexion, "UPDATE entrenador SET 
@@ -137,12 +205,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modulo'])) {
                 $ubicacion = mysqli_real_escape_string($conexion, $_POST['ubicacion']);
                 $id_admin = $_SESSION['id_administrador'];
                 
-                // Insertar producto
                 mysqli_query($conexion, "INSERT INTO producto (Nombre, Marca, Id_Administrador) 
                                        VALUES ('$nombre', '$marca', $id_admin)");
                 $id_producto = mysqli_insert_id($conexion);
                 
-                // Insertar en inventario
                 mysqli_query($conexion, "INSERT INTO inventario (Id_Producto, Cantidad, Ubicacion) 
                                        VALUES ($id_producto, $cantidad, '$ubicacion')");
             } elseif ($accion === 'editar') {
@@ -221,22 +287,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modulo'])) {
             }
             break;
 
-        // TIPOS DE MEMBRESÍA
+        // TIPOS DE MEMBRESÍA - SOLO DURACIÓN (CORREGIDO)
         case 'membrecias':
             if ($accion === 'crear') {
                 $nombre = mysqli_real_escape_string($conexion, $_POST['nombre_tipo']);
                 $precio = (float)$_POST['precio'];
+                $duracion = isset($_POST['duracion']) && !empty($_POST['duracion']) ? (int)$_POST['duracion'] : 30;
                 
-                mysqli_query($conexion, "INSERT INTO tipo_membrecia (Nombre_Tipo, Precio) 
-                                       VALUES ('$nombre', $precio)");
+                mysqli_query($conexion, "INSERT INTO tipo_membrecia (Nombre_Tipo, Precio, Duracion) 
+                                       VALUES ('$nombre', $precio, $duracion)");
             } elseif ($accion === 'editar') {
                 $id = (int)$_POST['id'];
                 $nombre = mysqli_real_escape_string($conexion, $_POST['nombre_tipo']);
                 $precio = (float)$_POST['precio'];
+                $duracion = isset($_POST['duracion']) && !empty($_POST['duracion']) ? (int)$_POST['duracion'] : 30;
                 
                 mysqli_query($conexion, "UPDATE tipo_membrecia SET 
                     Nombre_Tipo = '$nombre',
-                    Precio = $precio
+                    Precio = $precio,
+                    Duracion = $duracion
                     WHERE Id_Tipo_Membrecia = $id");
             } elseif ($accion === 'eliminar') {
                 $id = (int)$_POST['id'];
@@ -298,12 +367,14 @@ $accion = $_GET['accion'] ?? 'leer';
 if($modulo){
   echo "<h2 class='titulo-crud'><i class='fas fa-cog'></i> Gestión de ".ucfirst($modulo)."</h2>";
 
-  // CLIENTES
+  // CLIENTES - ACTUALIZADO CON LA ESTRUCTURA CORRECTA
   if($modulo==='clientes'){
     if($accion==='leer'){
       $res = mysqli_query($conexion,"
-        SELECT c.Id_Cliente, c.Nombre, c.Apellido, c.Telefono, c.Correo,
-               a.Codigo, a.Estado_Acceso, tm.Nombre_Tipo as Membresia
+        SELECT c.Id_Cliente, c.Nombre, c.Apellido, c.Telefono, c.Correo, c.Id_Membrecia,
+               a.Codigo, a.Estado_Acceso, 
+               m.Fecha_Inicio, m.Fecha_Fin, m.Duracion,
+               tm.Nombre_Tipo as Membresia, tm.Precio
         FROM cliente c
         LEFT JOIN acceso a ON c.Id_Cliente = a.Id_Cliente AND a.Estado_Acceso = 'activo'
         LEFT JOIN membrecia m ON c.Id_Membrecia = m.Id_Membrecia
@@ -312,11 +383,21 @@ if($modulo){
       ");
 
       echo "<table>
-        <tr><th>ID</th><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Membresía</th><th>QR</th><th>Acciones</th></tr>";
+        <tr><th>ID</th><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Membresía</th><th>Fecha Inicio</th><th>Fecha Fin</th><th>QR</th><th>Acciones</th></tr>";
       while($r=mysqli_fetch_assoc($res)){
         $qrImg = ($r['Codigo'] && file_exists("qrcodes/{$r['Id_Cliente']}.png"))
           ? "<img src='qrcodes/{$r['Id_Cliente']}.png' width='60' alt='QR'>"
           : "<span style='color:#777'>Sin QR</span>";
+
+        // Obtener el Id_Tipo_Membrecia actual para el modal de edición
+        $id_tipo_membrecia_actual = null;
+        if ($r['Id_Membrecia']) {
+            $tipo_membrecia = mysqli_query($conexion, "SELECT Id_Tipo_Membrecia FROM membrecia WHERE Id_Membrecia = {$r['Id_Membrecia']}");
+            if ($tipo_membrecia && mysqli_num_rows($tipo_membrecia) > 0) {
+                $tipo = mysqli_fetch_assoc($tipo_membrecia);
+                $id_tipo_membrecia_actual = $tipo['Id_Tipo_Membrecia'];
+            }
+        }
 
         echo "<tr>
           <td>{$r['Id_Cliente']}</td>
@@ -324,6 +405,8 @@ if($modulo){
           <td>{$r['Telefono']}</td>
           <td>{$r['Correo']}</td>
           <td>".($r['Membresia'] ?? 'Sin membresía')."</td>
+          <td>".($r['Fecha_Inicio'] ?? 'N/A')."</td>
+          <td>".($r['Fecha_Fin'] ?? 'N/A')."</td>
           <td style='text-align:center;'>$qrImg
             <form method='POST' class='inline' style='margin-top:5px;'>
               <input type='hidden' name='id_cliente' value='{$r['Id_Cliente']}'>
@@ -333,7 +416,7 @@ if($modulo){
             </form>
           </td>
           <td>
-            <button class='btn-edit' onclick=\"mostrarFormularioEdicion('clientes', {$r['Id_Cliente']}, '{$r['Nombre']}', '{$r['Apellido']}', '{$r['Telefono']}', '{$r['Correo']}')\">Editar</button>
+            <button class='btn-edit' onclick=\"mostrarFormularioEdicionCliente({$r['Id_Cliente']}, '{$r['Nombre']}', '{$r['Apellido']}', '{$r['Telefono']}', '{$r['Correo']}', " . ($id_tipo_membrecia_actual ?: 'null') . ")\">Editar</button>
             <form method='POST' class='inline'>
               <input type='hidden' name='modulo' value='clientes'>
               <input type='hidden' name='accion' value='eliminar'>
@@ -346,6 +429,8 @@ if($modulo){
       echo "</table>";
     }
     elseif($accion==='crear'){
+      $membrecias = mysqli_query($conexion,"SELECT Id_Tipo_Membrecia, Nombre_Tipo, Precio FROM tipo_membrecia");
+      
       echo "
       <div class='form-card'>
         <h3>Nuevo Cliente</h3>
@@ -357,13 +442,20 @@ if($modulo){
           <label>Teléfono:</label><input name='telefono'>
           <label>Correo:</label><input type='email' name='correo'>
           <label>Contraseña:</label> <input type='password' name='contrasena' required minlength='5'>
+          <label>Tipo de Membresía:</label>
+          <select name='id_tipo_membrecia'>
+            <option value=''>--Seleccionar Membresía--</option>";
+            while($mem=mysqli_fetch_assoc($membrecias)){
+              echo "<option value='{$mem['Id_Tipo_Membrecia']}'>{$mem['Nombre_Tipo']} - \${$mem['Precio']}</option>";
+            }
+      echo "</select>
           <button class='btn-save'>Guardar</button>
         </form>
       </div>";
     }
   }
 
-  // ENTRENADORES - CORREGIDO CON CONTRASEÑA
+  // ENTRENADORES
   if($modulo==='entrenadores'){
     if($accion==='leer'){
       $res = mysqli_query($conexion,"
@@ -559,18 +651,19 @@ if($modulo){
     }
   }
 
-  // TIPOS DE MEMBRESÍA
+  // TIPOS DE MEMBRESÍA - SOLO DURACIÓN (CORREGIDO)
   if($modulo==='membrecias'){
     if($accion==='leer'){
       $res = mysqli_query($conexion,"SELECT * FROM tipo_membrecia");
-      echo "<table><tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Acciones</th></tr>";
+      echo "<table><tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Duración (días)</th><th>Acciones</th></tr>";
       while($r=mysqli_fetch_assoc($res)){
         echo "<tr>
           <td>{$r['Id_Tipo_Membrecia']}</td>
           <td>{$r['Nombre_Tipo']}</td>
           <td>\${$r['Precio']}</td>
+          <td>".($r['Duracion'] ?? '30')."</td>
           <td>
-            <button class='btn-edit' onclick=\"mostrarFormularioEdicionMembresia({$r['Id_Tipo_Membrecia']}, '{$r['Nombre_Tipo']}', {$r['Precio']})\">Editar</button>
+            <button class='btn-edit' onclick=\"mostrarFormularioEdicionMembresia({$r['Id_Tipo_Membrecia']}, '{$r['Nombre_Tipo']}', {$r['Precio']}, " . ($r['Duracion'] ?? '30') . ")\">Editar</button>
             <form method='POST' class='inline'>
               <input type='hidden' name='modulo' value='membrecias'>
               <input type='hidden' name='accion' value='eliminar'>
@@ -593,6 +686,8 @@ if($modulo){
           <input name='nombre_tipo' required placeholder='Ej: Básica, Premium, VIP'>
           <label>Precio:</label>
           <input type='number' step='0.01' name='precio' required placeholder='0.00'>
+          <label>Duración (días):</label>
+          <input type='number' name='duracion' value='30' min='1' max='365'>
           <button class='btn-save'>Guardar</button>
         </form>
       </div>";
@@ -602,7 +697,6 @@ if($modulo){
 ?>
 </div>
 
-<!-- MODALES PARA EDITAR -->
 <!-- MODALES PARA EDITAR -->
 <div id="modalEdicion" class="modal">
   <div class="modal-content">
@@ -620,15 +714,35 @@ function goTo(modulo,accion){
   window.location.href='?modulo='+modulo+'&accion='+accion+'#crud-section';
 }
 
-// Funciones de edición COMPLETAS con modales
-function mostrarFormularioEdicion(modulo, id, nombre, apellido, telefono, correo) {
+// Función para cargar membresías via AJAX
+async function cargarMembrecias() {
+    try {
+        const response = await fetch('obtener_membrecias.php');
+        const membresias = await response.json();
+        return membresias;
+    } catch (error) {
+        console.error('Error al cargar membresías:', error);
+        return [];
+    }
+}
+
+// Función específica para edición de clientes
+async function mostrarFormularioEdicionCliente(id, nombre, apellido, telefono, correo, idTipoMembrecia) {
     const modal = document.getElementById('modalEdicion');
     const contenido = document.getElementById('contenidoModal');
     
+    const membresias = await cargarMembrecias();
+    let options = '<option value="">--Seleccionar Membresía--</option>';
+    
+    membresias.forEach(mem => {
+        const selected = mem.Id_Tipo_Membrecia == idTipoMembrecia ? 'selected' : '';
+        options += `<option value="${mem.Id_Tipo_Membrecia}" ${selected}>${mem.Nombre_Tipo} - $${mem.Precio}</option>`;
+    });
+    
     contenido.innerHTML = `
-        <h3>Editar ${modulo.charAt(0).toUpperCase() + modulo.slice(1)}</h3>
+        <h3>Editar Cliente</h3>
         <form method="POST" id="formEdicion">
-            <input type="hidden" name="modulo" value="${modulo}">
+            <input type="hidden" name="modulo" value="clientes">
             <input type="hidden" name="accion" value="editar">
             <input type="hidden" name="id" value="${id}">
             <label>Nombre:</label>
@@ -639,6 +753,8 @@ function mostrarFormularioEdicion(modulo, id, nombre, apellido, telefono, correo
             <input type="text" name="telefono" value="${telefono}">
             <label>Correo:</label>
             <input type="email" name="correo" value="${correo}">
+            <label>Tipo de Membresía:</label>
+            <select name="id_tipo_membrecia">${options}</select>
             <button type="submit" class="btn-save">Actualizar</button>
         </form>
     `;
@@ -646,43 +762,45 @@ function mostrarFormularioEdicion(modulo, id, nombre, apellido, telefono, correo
     modal.style.display = 'block';
     document.body.classList.add('modal-open');
     
-    // Configurar el envío del formulario
     document.getElementById('formEdicion').onsubmit = function(e) {
         e.preventDefault();
         this.submit();
     };
 }
 
-// Cerrar modal
-document.querySelector('.close').addEventListener('click', function() {
-    cerrarModal();
-});
-
-window.addEventListener('click', function(event) {
+// Función para edición de membresías SOLO CON DURACIÓN
+function mostrarFormularioEdicionMembresia(id, nombre, precio, duracion) {
     const modal = document.getElementById('modalEdicion');
-    if (event.target == modal) {
-        cerrarModal();
-    }
-});
-
-// Función para cerrar modal con animación
-function cerrarModal() {
-    const modal = document.getElementById('modalEdicion');
-    modal.classList.add('fade-out');
-    setTimeout(() => {
-        modal.style.display = 'none';
-        modal.classList.remove('fade-out');
-        document.body.classList.remove('modal-open');
-    }, 300);
+    const contenido = document.getElementById('contenidoModal');
+    
+    const duracionValue = duracion && duracion !== 'null' ? duracion : 30;
+    
+    contenido.innerHTML = `
+        <h3>Editar Tipo de Membresía</h3>
+        <form method="POST" id="formEdicion">
+            <input type="hidden" name="modulo" value="membrecias">
+            <input type="hidden" name="accion" value="editar">
+            <input type="hidden" name="id" value="${id}">
+            <label>Nombre:</label>
+            <input type="text" name="nombre_tipo" value="${nombre}" required placeholder="Ej: Básica, Premium, VIP">
+            <label>Precio:</label>
+            <input type="number" step="0.01" name="precio" value="${precio}" required placeholder="0.00">
+            <label>Duración (días):</label>
+            <input type="number" name="duracion" value="${duracionValue}" min="1" max="365">
+            <button type="submit" class="btn-save">Actualizar</button>
+        </form>
+    `;
+    
+    modal.style.display = 'block';
+    document.body.classList.add('modal-open');
+    
+    document.getElementById('formEdicion').onsubmit = function(e) {
+        e.preventDefault();
+        this.submit();
+    };
 }
 
-// Cerrar modal con ESC
-document.addEventListener('keydown', function(event) {
-    const modal = document.getElementById('modalEdicion');
-    if (event.key === 'Escape' && modal.style.display === 'block') {
-        cerrarModal();
-    }
-});
+// Funciones existentes para otros módulos
 function mostrarFormularioEdicionEntrenador(id, nombre, apellido, telefono, correo, idEspecialidad) {
     const modal = document.getElementById('modalEdicion');
     const contenido = document.getElementById('contenidoModal');
@@ -721,8 +839,6 @@ function mostrarFormularioEdicionEntrenador(id, nombre, apellido, telefono, corr
 }
 
 function obtenerOpcionesEspecialidades(idSeleccionado) {
-    // Esta función debería obtener las especialidades via AJAX o cargarlas previamente
-    // Por ahora, devolvemos opciones básicas
     return `
         <option value="1" ${idSeleccionado == 1 ? 'selected' : ''}>Culturismo</option>
         <option value="2" ${idSeleccionado == 2 ? 'selected' : ''}>Cardio</option>
@@ -733,13 +849,30 @@ function obtenerOpcionesEspecialidades(idSeleccionado) {
 
 // Cerrar modal
 document.querySelector('.close').addEventListener('click', function() {
-    document.getElementById('modalEdicion').style.display = 'none';
+    cerrarModal();
 });
 
 window.addEventListener('click', function(event) {
     const modal = document.getElementById('modalEdicion');
     if (event.target == modal) {
+        cerrarModal();
+    }
+});
+
+function cerrarModal() {
+    const modal = document.getElementById('modalEdicion');
+    modal.classList.add('fade-out');
+    setTimeout(() => {
         modal.style.display = 'none';
+        modal.classList.remove('fade-out');
+        document.body.classList.remove('modal-open');
+    }, 300);
+}
+
+document.addEventListener('keydown', function(event) {
+    const modal = document.getElementById('modalEdicion');
+    if (event.key === 'Escape' && modal.style.display === 'block') {
+        cerrarModal();
     }
 });
 
@@ -749,7 +882,6 @@ window.addEventListener('load',()=>{
   }
 });
 </script>
-
 
 </main>
 </body>
