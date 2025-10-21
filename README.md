@@ -1,0 +1,1 @@
+Descomprimir carpetas de qr y librerias y ponerlas en la misma carpta que los codigos
