@@ -1,15 +1,14 @@
 <?php
-// Datos de conexión
-$servidor   = 'localhost';
-$usuario    = 'root';
-$contrasena = '1212';   // tu contraseña real
-$baseDatos  = 'gymdb';  // nombre real de la BD
+$servername = "localhost";
+$username = "root";
+$password = "1212";
+$database = "gymdb";
 
-// Crear conexión
-$conn = new mysqli($servidor, $usuario, $contrasena, $baseDatos);
+// Crear conexión MySQLi
+$conexion = mysqli_connect($servername, $username, $password, $database);
 
 // Verificar conexión
-if ($conn->connect_error) {
-    die("Error de conexión: " . $conn->connect_error);
+if (!$conexion) {
+    die("Error de conexión: " . mysqli_connect_error());
 }
 ?>
