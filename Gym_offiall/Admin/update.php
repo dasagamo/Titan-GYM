@@ -18,31 +18,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modulo'])) {
         $correo = mysqli_real_escape_string($conexion, $_POST['correo']);
         $id_tipo = !empty($_POST['id_tipo_membrecia']) ? (int)$_POST['id_tipo_membrecia'] : null;
 
+        // Actualizar datos básicos del cliente
         mysqli_query($conexion, "UPDATE cliente SET Nombre='$nombre', Apellido='$apellido', Telefono='$telefono', Correo='$correo' WHERE Id_Cliente=$id");
 
-        // membresía
+        // Gestión de membresía
         if ($id_tipo) {
-            $existing = mysqli_fetch_assoc(mysqli_query($conexion, "SELECT Id_Membrecia FROM cliente WHERE Id_Cliente=$id"));
-            $dur = mysqli_fetch_assoc(mysqli_query($conexion, "SELECT Duracion FROM tipo_membrecia WHERE Id_Tipo_Membrecia=$id_tipo"))['Duracion'] ?? 30;
-            $f_inicio = date('Y-m-d');
-            $f_fin = date('Y-m-d', strtotime("+$dur days"));
-            if ($existing && $existing['Id_Membrecia']) {
-                mysqli_query($conexion, "UPDATE membrecia SET Id_Tipo_Membrecia=$id_tipo, Duracion=$dur, Fecha_Inicio='$f_inicio', Fecha_Fin='$f_fin' WHERE Id_Membrecia={$existing['Id_Membrecia']}");
-            } else {
-                mysqli_query($conexion, "INSERT INTO membrecia (Id_Tipo_Membrecia, Duracion, Fecha_Inicio, Fecha_Fin) VALUES ($id_tipo,$dur,'$f_inicio','$f_fin')");
-                $id_m = mysqli_insert_id($conexion);
-                mysqli_query($conexion, "UPDATE cliente SET Id_Membrecia=$id_m WHERE Id_Cliente=$id");
-            }
-        } else {
-            // eliminar membresía si existe (cliente queda sin membresía)
-            $existing = mysqli_fetch_assoc(mysqli_query($conexion, "SELECT Id_Membrecia FROM cliente WHERE Id_Cliente=$id"));
-            if ($existing && $existing['Id_Membrecia']) {
-                mysqli_query($conexion, "DELETE FROM membrecia WHERE Id_Membrecia={$existing['Id_Membrecia']}");
-                mysqli_query($conexion, "UPDATE cliente SET Id_Membrecia=NULL WHERE Id_Cliente=$id");
-            }
-        }
+            // Consulta para verificar membresía existente
+            $existing = mysqli_fetch_assoc(mysqli_query($conexion, 
+                "SELECT m.Id_Membrecia, m.Fecha_Inicio, m.Fecha_Fin, m.Duracion 
+                 FROM cliente c 
+                 LEFT JOIN membrecia m ON c.Id_Membrecia = m.Id_Membrecia 
+                 WHERE c.Id_Cliente = $id"));
 
-        $msg = "Cliente actualizado.";
+            // Manejar fechas y duración
+            if (!empty($_POST['fecha_inicio'])) {
+                $f_inicio = $_POST['fecha_inicio'];
+                
+                if (!empty($_POST['fecha_fin'])) {
+                    $f_fin = $_POST['fecha_fin'];
+                    // Calcular duración basada en las fechas proporcionadas
+                    $dur = (int) ((strtotime($f_fin) - strtotime($f_inicio)) / (60*60*24));
+                } else {
+                    // Si no hay fecha fin, usar duración existente o 30 días por defecto
+                    $duracion_existente = $existing['Duracion'] ?? 30;
+                    $f_fin = date('Y-m-d', strtotime("$f_inicio + $duracion_existente days"));
+                    $dur = $duracion_existente;
+                }
+            } else {
+                // Si no hay fecha inicio, usar hoy y 30 días por defecto
+                $f_inicio = date('Y-m-d');
+                $duracion_existente = $existing['Duracion'] ?? 30;
+                $f_fin = date('Y-m-d', strtotime("+ $duracion_existente days"));
+                $dur = $duracion_existente;
+            }
+
+            // Si se indicó duración manualmente en el formulario, usarla y recalcular fecha fin
+            if (!empty($_POST['duracion'])) {
+                $dur = (int)$_POST['duracion'];
+                $f_fin = date('Y-m-d', strtotime("$f_inicio + $dur days"));
+            }
+
+            // Validar duración mínima
+            if ($dur <= 0) $dur = 30;
+
+            if ($existing && $existing['Id_Membrecia']) {
+                // Actualizar membresía existente
+                mysqli_query($conexion, "UPDATE membrecia 
+                    SET Id_Tipo_Membrecia = $id_tipo, Duracion = $dur, Fecha_Inicio = '$f_inicio', Fecha_Fin = '$f_fin' 
+                    WHERE Id_Membrecia = {$existing['Id_Membrecia']}");
+            } else {
+                // Crear nueva membresía
+                mysqli_query($conexion, "INSERT INTO membrecia (Id_Tipo_Membrecia, Duracion, Fecha_Inicio, Fecha_Fin) 
+                    VALUES ($id_tipo, $dur, '$f_inicio', '$f_fin')");
+                $id_m = mysqli_insert_id($conexion);
+                mysqli_query($conexion, "UPDATE cliente SET Id_Membrecia = $id_m WHERE Id_Cliente = $id");
+            }
+            
+            $msg = "Cliente y membresía actualizados correctamente.";
+        } else {
+            // Eliminar membresía si existe
+            $existing = mysqli_fetch_assoc(mysqli_query($conexion, 
+                "SELECT Id_Membrecia FROM cliente WHERE Id_Cliente = $id"));
+            if ($existing && $existing['Id_Membrecia']) {
+                mysqli_query($conexion, "DELETE FROM membrecia WHERE Id_Membrecia = {$existing['Id_Membrecia']}");
+                mysqli_query($conexion, "UPDATE cliente SET Id_Membrecia = NULL WHERE Id_Cliente = $id");
+            }
+            $msg = "Cliente actualizado (sin membresía).";
+        }
     }
 
     // ENTRENADOR - editar
@@ -123,106 +165,360 @@ $ok = $_GET['ok'] ?? '';
   <meta charset="UTF-8">
   <title>Actualizar - Admin</title>
   <link rel="stylesheet" href="../Desing/admin.css?v=<?php echo time(); ?>">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <script>
-    function openEdit(mod, id, dataJson){
-      const data = JSON.parse(dataJson);
-      // abrir formulario de edición sencillo
-      let html = `<h3>Editar ${mod}</h3>
-        <form method="POST">
-          <input type="hidden" name="modulo" value="${mod}">
-          <input type="hidden" name="accion" value="editar">
-          <input type="hidden" name="id" value="${id}">`;
+function openEdit(mod, id, dataJson) {
+  const data = JSON.parse(dataJson);
+  
+  const moduleConfig = {
+    'clientes': { icon: 'fa-user', title: 'Cliente' },
+    'entrenadores': { icon: 'fa-user-tie', title: 'Entrenador' },
+    'inventario': { icon: 'fa-box', title: 'Producto' },
+    'proveedores': { icon: 'fa-truck', title: 'Proveedor' },
+    'especialidades': { icon: 'fa-certificate', title: 'Especialidad' },
+    'membrecias': { icon: 'fa-id-card', title: 'Tipo de Membresía' }
+  };
 
-      if(mod === 'clientes'){
-        html += ` <label>Nombre</label><input name="nombre" value="${data.Nombre}" required>
-                  <label>Apellido</label><input name="apellido" value="${data.Apellido}" required>
-                  <label>Teléfono</label><input name="telefono" value="${data.Telefono}">
-                  <label>Correo</label><input name="correo" value="${data.Correo}">
-                  <label>Tipo de membresía</label>
-                  <select name="id_tipo_membrecia" id="selMemb"> <option value="">--Sin membresía--</option></select>`;
-      }
-      if(mod === 'entrenadores'){
-        html += ` <label>Nombre</label><input name="nombre" value="${data.Nombre}" required>
-                  <label>Apellido</label><input name="apellido" value="${data.Apellido}" required>
-                  <label>Teléfono</label><input name="telefono" value="${data.Telefono}">
-                  <label>Correo</label><input name="correo" value="${data.Correo}">
-                  <label>Contraseña (opcional)</label><input name="contrasena" placeholder="Dejar vacío para no cambiar">
-                  <label>Especialidad</label>
-                  <select name="id_especialidad" id="selEsp"></select>`;
-      }
-      if(mod === 'inventario'){
-        html += ` <label>Nombre</label><input name="nombre" value="${data.Nombre}" required>
-                  <label>Marca</label><input name="marca" value="${data.Marca}">
-                  <label>Cantidad</label><input type="number" name="cantidad" value="${data.Cantidad}">
-                  <label>Ubicación</label><input name="ubicacion" value="${data.Ubicacion}">`;
-      }
-      if(mod === 'proveedores'){
-        html += ` <label>Nombre</label><input name="nombre" value="${data.Nombre}" required>
-                  <label>Teléfono</label><input name="telefono" value="${data.Telefono}">
-                  <label>Correo</label><input name="correo" value="${data.Correo}">
-                  <label>Producto</label><select name="id_producto" id="selProd"></select>
-                  <label>Precio proveedor</label><input type="number" step="0.01" name="precio_proveedor" value="${data.Precio_Proveedor}">`;
-      }
-      if(mod === 'especialidades'){
-        html += ` <label>Nombre</label><input name="nombre_especialidad" value="${data.Nombre_Especialidad}" required>
-                  <label>Descripción</label><textarea name="descripcion">${data.Descripcion || ''}</textarea>`;
-      }
-      if(mod === 'membrecias'){
-        html += ` <label>Nombre</label><input name="nombre_tipo" value="${data.Nombre_Tipo}" required>
-                  <label>Precio</label><input type="number" step="0.01" name="precio" value="${data.Precio}">
-                  <label>Duración (días)</label><input type="number" name="duracion" value="${data.Duracion || 30}">`;
-      }
+  const config = moduleConfig[mod] || { icon: 'fa-edit', title: mod };
 
-      html += `<button class="btn-save">Actualizar</button></form>`;
+  let html = `
+    <div class="modal-header">
+      <h3><i class="fas ${config.icon}"></i> Editar ${config.title}</h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <form method="POST" class="modal-form">
+        <input type="hidden" name="modulo" value="${mod}">
+        <input type="hidden" name="accion" value="editar">
+        <input type="hidden" name="id" value="${id}">
+        <div class="modal-form-grid">
+  `;
 
-      // mostrar en modal simple
-      const modal = document.getElementById('modalEdicion');
-      document.getElementById('contenidoModal').innerHTML = html;
-      modal.style.display = 'flex';
+  if(mod === 'clientes'){
+    html += `
+      <div class="form-group-enhanced">
+        <label class="form-label-enhanced">
+          <i class="fas fa-user"></i>Nombre
+        </label>
+        <input class="form-input-enhanced" name="nombre" value="${data.Nombre || ''}" required>
+      </div>
+      
+      <div class="form-group-enhanced">
+        <label class="form-label-enhanced">
+          <i class="fas fa-user"></i>Apellido
+        </label>
+        <input class="form-input-enhanced" name="apellido" value="${data.Apellido || ''}" required>
+      </div>
+      
+      <div class="form-group-enhanced">
+        <label class="form-label-enhanced">
+          <i class="fas fa-phone"></i>Teléfono
+        </label>
+        <input class="form-input-enhanced" name="telefono" value="${data.Telefono || ''}">
+      </div>
+      
+      <div class="form-group-enhanced">
+        <label class="form-label-enhanced">
+          <i class="fas fa-envelope"></i>Correo
+        </label>
+        <input class="form-input-enhanced" type="email" name="correo" value="${data.Correo || ''}">
+      </div>
+      
+      <div class="form-group-enhanced">
+        <label class="form-label-enhanced">
+          <i class="fas fa-id-card"></i>Tipo de membresía
+        </label>
+        <select class="form-select-enhanced" name="id_tipo_membrecia" id="selMemb">
+          <option value="">-- Sin membresía --</option>
+        </select>
+      </div>
+      
+      <div class="form-section">
+        <div class="form-section-title">
+          <i class="fas fa-calendar-alt"></i>Datos de Membresía
+        </div>
+        <div class="form-group-row">
+          <div class="form-group-enhanced">
+            <label class="form-label-enhanced">Fecha Inicio</label>
+            <input type="date" class="form-input-enhanced" name="fecha_inicio" value="${data.Fecha_Inicio || ''}">
+          </div>
+          <div class="form-group-enhanced">
+            <label class="form-label-enhanced">Fecha Fin</label>
+            <input type="date" class="form-input-enhanced" name="fecha_fin" value="${data.Fecha_Fin || ''}">
+          </div>
+        </div>
+        <div class="form-group-enhanced">
+          <label class="form-label-enhanced">
+            <i class="fas fa-calendar-day"></i>Duración (días)
+          </label>
+          <input type="number" class="form-input-enhanced" name="duracion" value="${data.Duracion || 30}" min="1">
+        </div>
+      </div>
+    `;
+  }
+  
+  if(mod === 'entrenadores'){
+    html += `
+        <div>
+          <label>Nombre</label>
+          <input name="nombre" value="${data.Nombre || ''}" required>
+        </div>
+        
+        <div>
+          <label>Apellido</label>
+          <input name="apellido" value="${data.Apellido || ''}" required>
+        </div>
+        
+        <div>
+          <label>Teléfono</label>
+          <input name="telefono" value="${data.Telefono || ''}">
+        </div>
+        
+        <div>
+          <label>Correo</label>
+          <input type="email" name="correo" value="${data.Correo || ''}">
+        </div>
+        
+        <div>
+          <label>Contraseña (opcional)</label>
+          <input type="password" name="contrasena" placeholder="Dejar vacío para no cambiar">
+        </div>
+        
+        <div>
+          <label>Especialidad</label>
+          <select name="id_especialidad" id="selEsp">
+            <option value="">-- Sin especialidad --</option>
+          </select>
+        </div>
+    `;
+  }
 
-      // cargar opciones dinamicas si aplica
-      if(mod === 'clientes'){
-        fetch('obtener_membrecias.php').then(r=>r.json()).then(list=>{
-          let sel = document.getElementById('selMemb');
-          list.forEach(it=>{
-            const opt = document.createElement('option');
-            opt.value = it.Id_Tipo_Membrecia;
-            opt.text = `${it.Nombre_Tipo} - $${it.Precio}`;
-            if(it.Id_Tipo_Membrecia == data.Id_Tipo_Membrecia) opt.selected = true;
-            sel.appendChild(opt);
-          });
-        });
-      }
-      if(mod === 'entrenadores'){
-        fetch('obtener_especialidades.php').then(r=>r.json()).then(list=>{
-          let sel = document.getElementById('selEsp');
-          list.forEach(it=>{
-            const opt = document.createElement('option');
-            opt.value = it.Id_Especialidad;
-            opt.text = it.Nombre_Especialidad;
-            if(it.Id_Especialidad == data.Id_Especialidad) opt.selected = true;
-            sel.appendChild(opt);
-          });
-        });
-      }
-      if(mod === 'proveedores'){
-        fetch('obtener_productos.php').then(r=>r.json()).then(list=>{
-          let sel = document.getElementById('selProd');
-          list.forEach(it=>{
-            const opt = document.createElement('option');
-            opt.value = it.Id_Producto;
-            opt.text = it.Nombre;
-            if(it.Id_Producto == data.Id_Producto) opt.selected = true;
-            sel.appendChild(opt);
-          });
-        });
-      }
+  if(mod === 'inventario'){
+    html += `
+        <div>
+          <label>Nombre</label>
+          <input name="nombre" value="${data.Nombre || ''}" required>
+        </div>
+        
+        <div>
+          <label>Marca</label>
+          <input name="marca" value="${data.Marca || ''}">
+        </div>
+        
+        <div>
+          <label>Cantidad</label>
+          <input type="number" name="cantidad" value="${data.Cantidad || 0}">
+        </div>
+        
+        <div>
+          <label>Ubicación</label>
+          <input name="ubicacion" value="${data.Ubicacion || ''}">
+        </div>
+    `;
+  }
+
+  if(mod === 'proveedores'){
+    html += `
+        <div>
+          <label>Nombre</label>
+          <input name="nombre" value="${data.Nombre || ''}" required>
+        </div>
+        
+        <div>
+          <label>Teléfono</label>
+          <input name="telefono" value="${data.Telefono || ''}">
+        </div>
+        
+        <div>
+          <label>Correo</label>
+          <input type="email" name="correo" value="${data.Correo || ''}">
+        </div>
+        
+        <div>
+          <label>Producto</label>
+          <select name="id_producto" id="selProd" required>
+            <option value="">-- Seleccionar producto --</option>
+          </select>
+        </div>
+        
+        <div>
+          <label>Precio proveedor</label>
+          <input type="number" step="0.01" name="precio_proveedor" value="${data.Precio_Proveedor || 0}" required>
+        </div>
+    `;
+  }
+
+  if(mod === 'especialidades'){
+    html += `
+        <div>
+          <label>Nombre</label>
+          <input name="nombre_especialidad" value="${data.Nombre_Especialidad || ''}" required>
+        </div>
+        
+        <div>
+          <label>Descripción</label>
+          <textarea name="descripcion" rows="4">${data.Descripcion || ''}</textarea>
+        </div>
+    `;
+  }
+
+  if(mod === 'membrecias'){
+    html += `
+        <div>
+          <label>Nombre</label>
+          <input name="nombre_tipo" value="${data.Nombre_Tipo || ''}" required>
+        </div>
+        
+        <div>
+          <label>Precio</label>
+          <input type="number" step="0.01" name="precio" value="${data.Precio || 0}" required>
+        </div>
+        
+        <div>
+          <label>Duración (días)</label>
+          <input type="number" name="duracion" value="${data.Duracion || 30}" min="1">
+        </div>
+    `;
+  }
+
+  html += `
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-enhanced btn-secondary-enhanced" onclick="closeModal()">
+            <i class="fas fa-times"></i>Cancelar
+          </button>
+          <button type="submit" class="btn-enhanced btn-primary-enhanced">
+            <i class="fas fa-save"></i>Actualizar
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  const modal = document.getElementById('modalEdicion');
+  const contenidoModal = document.getElementById('contenidoModal');
+  contenidoModal.innerHTML = html;
+  modal.style.display = 'flex';
+
+  // Cargar opciones dinámicas
+  loadDynamicOptions(mod, data);
+}
+
+function loadDynamicOptions(mod, data) {
+  console.log('Cargando opciones para:', mod, 'Datos:', data);
+  
+  if(mod === 'clientes'){
+    console.log('Buscando select selMemb...');
+    let sel = document.getElementById('selMemb');
+    if (!sel) {
+      console.error('❌ NO se encontró el elemento selMemb');
+      return;
     }
-    function closeModal(){
-      document.getElementById('modalEdicion').style.display='none';
-    }
+    console.log('✅ Select selMemb encontrado');
+    
+    // Mostrar loading
+    sel.innerHTML = '<option value="">Cargando membresías...</option>';
+    
+    fetch('obtener_membrecias.php')
+      .then(response => {
+        console.log('Respuesta del servidor:', response.status, response.statusText);
+        if (!response.ok) {
+          throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then(list => {
+        console.log('✅ Membresías cargadas:', list);
+        
+        if (list.error) {
+          throw new Error(list.error);
+        }
+        
+        if (!Array.isArray(list)) {
+          throw new Error('La respuesta no es un array válido');
+        }
+        
+        sel.innerHTML = '<option value="">-- Sin membresía --</option>';
+        
+        list.forEach(it => {
+          const opt = document.createElement('option');
+          opt.value = it.Id_Tipo_Membrecia;
+          opt.textContent = `${it.Nombre_Tipo} - $${it.Precio}`;
+          
+          // Comparar IDs como números
+          const currentId = parseInt(data.Id_Tipo_Membrecia || 0);
+          const optionId = parseInt(it.Id_Tipo_Membrecia);
+          if (optionId === currentId) {
+            opt.selected = true;
+            console.log('✅ Membresía seleccionada:', it.Nombre_Tipo);
+          }
+          
+          sel.appendChild(opt);
+        });
+        
+        console.log('✅ Select poblado con', list.length, 'opciones');
+      })
+      .catch(error => {
+        console.error('❌ Error cargando membresías:', error);
+        sel.innerHTML = '<option value="">Error al cargar membresías</option>';
+        alert('Error al cargar las membresías: ' + error.message);
+      });
+  }
+  
+  if(mod === 'entrenadores'){
+    fetch('obtener_especialidades.php')
+      .then(response => response.json())
+      .then(list => {
+        let sel = document.getElementById('selEsp');
+        if (!sel) return;
+        
+        sel.innerHTML = '<option value="">-- Sin especialidad --</option>';
+        list.forEach(it => {
+          const opt = document.createElement('option');
+          opt.value = it.Id_Especialidad;
+          opt.textContent = it.Nombre_Especialidad;
+          if (parseInt(it.Id_Especialidad) === parseInt(data.Id_Especialidad || 0)) {
+            opt.selected = true;
+          }
+          sel.appendChild(opt);
+        });
+      })
+      .catch(error => console.error('Error cargando especialidades:', error));
+  }
+  
+  if(mod === 'proveedores'){
+    fetch('obtener_productos.php')
+      .then(response => response.json())
+      .then(list => {
+        let sel = document.getElementById('selProd');
+        if (!sel) return;
+        
+        sel.innerHTML = '<option value="">-- Seleccionar producto --</option>';
+        list.forEach(it => {
+          const opt = document.createElement('option');
+          opt.value = it.Id_Producto;
+          opt.textContent = it.Nombre;
+          if (parseInt(it.Id_Producto) === parseInt(data.Id_Producto || 0)) {
+            opt.selected = true;
+          }
+          sel.appendChild(opt);
+        });
+      })
+      .catch(error => console.error('Error cargando productos:', error));
+  }
+}
+
+function closeModal() {
+  document.getElementById('modalEdicion').style.display = 'none';
+}
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('modalEdicion').addEventListener('click', function(e) {
+  if (e.target.id === 'modalEdicion') {
+    closeModal();
+  }
+});
   </script>
-  <style>.modal{display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);position:fixed;left:0;top:0;width:100%;height:100%;z-index:999}.modal-content{background:white;padding:12px;border-radius:8px;width:90%;max-width:700px}</style>
 </head>
 <body>
   <div class="header">
@@ -249,17 +545,40 @@ $ok = $_GET['ok'] ?? '';
 
         <?php
         if ($mod === 'clientes') {
-          $res = mysqli_query($conexion, "SELECT c.*, m.Id_Tipo_Membrecia AS Id_Tipo_Membrecia FROM cliente c LEFT JOIN membrecia m ON c.Id_Membrecia = m.Id_Membrecia");
-          echo "<table><tr><th>ID</th><th>Nombre</th><th>Correo</th><th>Tel</th><th>Acción</th></tr>";
+          $res = mysqli_query($conexion, "
+              SELECT c.*, 
+                     m.Id_Tipo_Membrecia AS Id_Tipo_Membrecia, 
+                     m.Fecha_Inicio, 
+                     m.Fecha_Fin, 
+                     m.Duracion
+              FROM cliente c 
+              LEFT JOIN membrecia m ON c.Id_Membrecia = m.Id_Membrecia
+          ");
+          
+          echo "<table>
+          <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Correo</th>
+              <th>Tel</th>
+              <th>Fecha Inicio</th>
+              <th>Fecha Fin</th>
+              <th>Duración (días)</th>
+              <th>Acción</th>
+          </tr>";
+
           while($r=mysqli_fetch_assoc($res)){
-            $data = htmlspecialchars(json_encode($r), ENT_QUOTES, 'UTF-8');
-            echo "<tr>
-                    <td>{$r['Id_Cliente']}</td>
-                    <td>{$r['Nombre']} {$r['Apellido']}</td>
-                    <td>{$r['Correo']}</td>
-                    <td>{$r['Telefono']}</td>
-                    <td><button class='btn-edit' onclick='openEdit(\"clientes\", {$r['Id_Cliente']}, `{$data}`)'>Editar</button></td>
-                  </tr>";
+              $data = htmlspecialchars(json_encode($r), ENT_QUOTES, 'UTF-8');
+              echo "<tr>
+                      <td>{$r['Id_Cliente']}</td>
+                      <td>{$r['Nombre']} {$r['Apellido']}</td>
+                      <td>{$r['Correo']}</td>
+                      <td>{$r['Telefono']}</td>
+                      <td>".($r['Fecha_Inicio'] ?? '-') ."</td>
+                      <td>".($r['Fecha_Fin'] ?? '-') ."</td>
+                      <td>".($r['Duracion'] ?? '-') ."</td>
+                      <td><button class='btn-edit' onclick='openEdit(\"clientes\", {$r['Id_Cliente']}, `{$data}`)'>Editar</button></td>
+                    </tr>";
           }
           echo "</table>";
         }

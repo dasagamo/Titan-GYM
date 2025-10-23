@@ -1,4 +1,4 @@
-/* admin.css - CSS Unificado para Todas las Páginas */
+/* admin.css - CSS Unificado para Todas las Páginas del Panel Admin */
 :root {
   --primario: #0a0a12;
   --secundario: #161625;
@@ -501,7 +501,6 @@ table tbody tr:last-child td {
   flex-shrink: 0;
   min-height: 36px;
   box-sizing: border-box;
-  font-family: inherit;
 }
 
 .btn-sm {
@@ -577,44 +576,77 @@ form[style*="display:inline-block"] button {
   display: none;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
   position: fixed;
   left: 0;
   top: 0;
   width: 100%;
   height: 100%;
   z-index: 9999;
+  padding: 1rem;
 }
 
 .modal-content {
   background: var(--gradient-card);
-  padding: 2rem;
-  border-radius: 12px;
-  width: 90%;
+  padding: 0;
+  border-radius: 16px;
+  width: 95%;
   max-width: 600px;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden;
   border: 1px solid var(--borde);
-  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
 }
 
-.modal-content .close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
+.modal-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--borde);
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  font-size: 1.4rem;
+  color: var(--texto);
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.modal-header h3 i {
+  color: var(--acento);
+}
+
+.modal-body {
+  padding: 2rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.modal-close {
   background: none;
   border: none;
   color: var(--texto-secundario);
   font-size: 1.5rem;
   cursor: pointer;
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.3s ease;
 }
 
-.modal-content .close:hover {
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.05);
   color: var(--texto);
 }
 
@@ -875,4 +907,363 @@ code {
 
 .min-w-0 {
   min-width: 0;
+}
+/* === ESTILOS ESPECÍFICOS PARA FORMULARIOS DE MODAL === */
+
+/* Modal mejorado */
+.modal {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: var(--gradient-card);
+  padding: 0;
+  border-radius: 16px;
+  width: 95%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow: hidden;
+  border: 1px solid var(--borde);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--borde);
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  font-size: 1.4rem;
+  color: var(--texto);
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.modal-header h3 i {
+  color: var(--acento);
+}
+
+.modal-body {
+  padding: 2rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--texto-secundario);
+  font-size: 1.5rem;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--texto);
+}
+
+/* === ENHANCED FORM STYLES === */
+.modal-form-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.form-group-enhanced {
+  position: relative;
+}
+
+.form-label-enhanced {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  color: var(--texto);
+  margin-bottom: 0.5rem;
+}
+
+.form-label-enhanced i {
+  color: var(--acento);
+  font-size: 0.9em;
+}
+
+.form-input-enhanced,
+.form-select-enhanced {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: var(--input-fondo);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  color: var(--texto);
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.form-input-enhanced:focus,
+.form-select-enhanced:focus {
+  border-color: var(--acento);
+  background: var(--input-focus);
+  box-shadow: 0 0 0 3px var(--sombra);
+}
+
+.form-section {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  padding: 1.25rem;
+  border: 1px solid var(--borde);
+}
+
+.form-section-title {
+  font-weight: 600;
+  color: var(--texto);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-section-title i {
+  color: var(--acento);
+}
+
+.form-group-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--borde);
+}
+
+.btn-enhanced {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: none;
+  font-size: 0.9rem;
+}
+
+.btn-primary-enhanced {
+  background: var(--gradient-accent);
+  color: white;
+}
+
+.btn-secondary-enhanced {
+  background: transparent;
+  color: var(--texto);
+  border: 1px solid var(--borde);
+}
+
+.btn-enhanced i {
+  font-size: 0.9em;
+}
+
+.btn-enhanced:hover {
+  transform: translateY(-1px);
+}
+
+.btn-primary-enhanced:hover {
+  box-shadow: 0 4px 12px var(--sombra-fuerte);
+}
+
+.btn-secondary-enhanced:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--acento);
+}
+
+/* Estados de validación */
+.form-group-enhanced.success .form-input-enhanced,
+.form-group-enhanced.success .form-select-enhanced {
+  border-color: var(--exito);
+  box-shadow: 0 0 0 4px rgba(42, 157, 143, 0.1);
+}
+
+.form-group-enhanced.error .form-input-enhanced,
+.form-group-enhanced.error .form-select-enhanced {
+  border-color: var(--error);
+  box-shadow: 0 0 0 4px rgba(231, 111, 81, 0.1);
+}
+
+.form-feedback {
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+}
+
+.form-feedback.success {
+  background: rgba(42, 157, 143, 0.1);
+  color: var(--exito);
+  border: 1px solid rgba(42, 157, 143, 0.2);
+}
+
+.form-feedback.error {
+  background: rgba(231, 111, 81, 0.1);
+  color: var(--error);
+  border: 1px solid rgba(231, 111, 81, 0.2);
+}
+
+/* Mejoras específicas para tipos de campo */
+.input-with-icon {
+  position: relative;
+}
+
+.input-with-icon i {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--texto-secundario);
+  z-index: 1;
+}
+
+.input-with-icon .form-input-enhanced {
+  padding-left: 3rem;
+}
+
+/* Placeholders mejorados */
+.form-input-enhanced::placeholder {
+  color: var(--texto-secundario);
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.form-input-enhanced:focus::placeholder {
+  opacity: 0.4;
+}
+
+/* Animaciones de entrada */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-content {
+  animation: slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Scrollbar personalizado para modal */
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: var(--borde);
+  border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--acento);
+}
+
+/* Responsive para modal */
+@media (max-width: 768px) {
+  .modal {
+    padding: 0.5rem;
+  }
+  
+  .modal-content {
+    width: 100%;
+    max-height: 95vh;
+  }
+  
+  .modal-header {
+    padding: 1.25rem 1.5rem;
+  }
+  
+  .modal-body {
+    padding: 1.5rem;
+  }
+  
+  .modal-form-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  
+  .form-group-row {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+  }
+  
+  .btn-enhanced {
+    min-width: 100%;
+  }
+  
+  .form-section {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-header {
+    padding: 1rem 1.25rem;
+  }
+  
+  .modal-body {
+    padding: 1.25rem;
+  }
+  
+  .modal-header h3 {
+    font-size: 1.2rem;
+  }
+  
+  .form-input-enhanced,
+  .form-select-enhanced {
+    padding: 0.875rem 1rem;
+  }
 }

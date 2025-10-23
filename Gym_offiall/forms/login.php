@@ -1,6 +1,6 @@
 <?php
 session_start();
-include '../conexion.php';
+require_once "../Conexion.php"; // Fix capitalization to match actual file
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $correo = mysqli_real_escape_string($conexion, $_POST['correo']);
@@ -35,19 +35,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 case 'cliente':
                     $_SESSION['id_cliente'] = $usuario['Id_Cliente'];
                     $_SESSION['rol'] = 'cliente';
-                    header("Location: ../cliente.php");
+                    header("Location: ../Cliente/index.php"); // Update path
                     break;
 
                 case 'administrador':
-                    $_SESSION['id_admin'] = $usuario['Id_Administrador'];
+                    $_SESSION['id_administrador'] = $usuario['Id_Administrador']; // Fix session variable name
                     $_SESSION['rol'] = 'admin';
-                    header("Location: ../index_admin.php");
+                    header("Location: ../Admin/index_admin.php"); // Fix admin path
                     break;
 
                 case 'entrenador':
                     $_SESSION['id_entrenador'] = $usuario['Id_Entrenador'];
                     $_SESSION['rol'] = 'entrenador';
-                    header("Location: ../entrenador.php");
+                    header("Location: ../Entrenador/index.php"); // Update path
                     break;
             }
             exit;
@@ -63,31 +63,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Iniciar Sesión - Titan GYM</title>
-    <link rel="stylesheet" href="../Desing/login.css">
+    <title>Login - Titán GYM</title>
+    <link rel="stylesheet" href="../Desing/login.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
 </head>
 <body>
     <div class="login-container">
         <h1>INICIAR SESIÓN</h1>
         <?php if(isset($error)): ?>
-            <div class="error-message"><?= $error ?></div>
+            <div class="error-message"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
-        <form method="POST">
+        <form method="POST" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>">
             <div class="input-group">
                 <label for="correo">Correo Electrónico</label>
-                <input type="email" id="correo" name="correo" placeholder="tu@correo.com" required>
+                <input type="email" id="correo" name="correo" 
+                       value="<?= isset($_POST['correo']) ? htmlspecialchars($_POST['correo']) : '' ?>"
+                       placeholder="tu@correo.com" required>
             </div>
             <div class="input-group">
                 <label for="password">Contraseña</label>
-                <input type="password" id="password" name="password" placeholder="••••••••" required>
+                <input type="password" id="password" name="password" 
+                       placeholder="••••••••" required>
             </div>
             <button type="submit" class="btn-login">INGRESAR</button>
         </form>
         <div class="registro-texto">
-            ¿No tienes cuenta? <a href="Inscripcion.php">Regístrate aquí</a>
+            ¿No tienes cuenta? <a href="registro.php">Regístrate aquí</a>
         </div>
         <div class="registro-texto">
-            <a href="../index_cliente.php">← Volver al inicio</a>
+            <a href="../index.php">← Volver al inicio</a>
         </div>
     </div>
 </body>

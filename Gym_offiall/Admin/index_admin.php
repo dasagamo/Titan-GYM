@@ -2,7 +2,7 @@
 // index_admin.php
 session_start();
 if (!isset($_SESSION['id_administrador'])) {
-    header('Location: forms/login.php');
+    header('Location: ../forms/login.php');
     exit();
 }
 require_once "../Conexion.php";

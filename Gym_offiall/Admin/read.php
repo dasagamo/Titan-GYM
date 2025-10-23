@@ -41,14 +41,27 @@ $mod = $_GET['modulo'] ?? 'clientes';
         if ($mod === 'clientes') {
           $res = mysqli_query($conexion, "
             SELECT c.Id_Cliente, c.Nombre, c.Apellido, c.Telefono, c.Correo,
-                   tm.Nombre_Tipo, a.Codigo
+                   tm.Nombre_Tipo, m.Fecha_Inicio, m.Fecha_Fin, m.Duracion,
+                   a.Codigo
             FROM cliente c
             LEFT JOIN membrecia m ON c.Id_Membrecia = m.Id_Membrecia
             LEFT JOIN tipo_membrecia tm ON m.Id_Tipo_Membrecia = tm.Id_Tipo_Membrecia
             LEFT JOIN acceso a ON c.Id_Cliente = a.Id_Cliente
             ORDER BY c.Id_Cliente ASC
           ");
-          echo "<table><tr><th>ID</th><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Membresía</th><th>QR</th></tr>";
+          echo "<table>
+          <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Teléfono</th>
+              <th>Correo</th>
+              <th>Membresía</th>
+              <th>Fecha Inicio</th>
+              <th>Fecha Fin</th>
+              <th>Duración (días)</th>
+              <th>QR</th>
+          </tr>";
+
           while ($r = mysqli_fetch_assoc($res)) {
             $qrPath = "../qrcodes/{$r['Id_Cliente']}.png";
             $qr = file_exists($qrPath)
@@ -61,6 +74,9 @@ $mod = $_GET['modulo'] ?? 'clientes';
                     <td>{$r['Telefono']}</td>
                     <td>{$r['Correo']}</td>
                     <td>" . ($r['Nombre_Tipo'] ?? 'Sin membresía') . "</td>
+                    <td>" . ($r['Fecha_Inicio'] ?? '-') . "</td>
+                    <td>" . ($r['Fecha_Fin'] ?? '-') . "</td>
+                    <td>" . ($r['Duracion'] ?? '-') . "</td>
                     <td>$qr</td>
                   </tr>";
           }
