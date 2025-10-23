@@ -3,51 +3,59 @@ session_start();
 include '../conexion.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $correo = $_POST['correo'];
+    $correo = mysqli_real_escape_string($conexion, $_POST['correo']);
     $contrasena = $_POST['password'];
 
-    // Buscar en todas las tablas de usuarios
-    $tablas = ['cliente', 'administrador', 'entrenador'];
+    $tablas = [
+        'cliente' => ['id' => 'Id_Cliente', 'nombre' => 'Nombre', 'redirect' => '../cliente.php'],
+        'administrador' => ['id' => 'Id_Administrador', 'nombre' => 'Nombre', 'redirect' => '../index_admin.php'],
+        'entrenador' => ['id' => 'Id_Entrenador', 'nombre' => 'Nombre', 'redirect' => '../entrenador.php']
+    ];
+
     $usuario = null;
     $tipo_usuario = null;
 
-    foreach ($tablas as $tabla) {
-        $consulta = mysqli_query($conexion, "SELECT * FROM $tabla WHERE Correo='$correo'");
-        
-        if (mysqli_num_rows($consulta) > 0) {
-            $usuario = mysqli_fetch_assoc($consulta);
+    foreach ($tablas as $tabla => $data) {
+        $query = mysqli_query($conexion, "SELECT * FROM $tabla WHERE Correo='$correo' LIMIT 1");
+        if ($query && mysqli_num_rows($query) > 0) {
+            $usuario = mysqli_fetch_assoc($query);
             $tipo_usuario = $tabla;
             break;
         }
     }
 
-    if ($usuario && password_verify($contrasena, $usuario['Contrasena'])) {
-        // Guardar datos de sesión según el tipo de usuario
-        switch($tipo_usuario) {
-            case 'cliente':
-                $_SESSION['id_cliente'] = $usuario['Id_Cliente'];
-                $_SESSION['nombre'] = $usuario['Nombre'];
-                $_SESSION['tipo_usuario'] = 'cliente';
-                header("Location: ../cliente.php");
-                break;
-                
-            case 'administrador':
-                $_SESSION['id_administrador'] = $usuario['Id_Administrador'];
-                $_SESSION['nombre'] = $usuario['Nombre'];
-                $_SESSION['tipo_usuario'] = 'administrador';
-                header("Location: ../Admin.php");
-                break;
-                
-            case 'entrenador':
-                $_SESSION['id_entrenador'] = $usuario['Id_Entrenador'];
-                $_SESSION['nombre'] = $usuario['Nombre'];
-                $_SESSION['tipo_usuario'] = 'entrenador';
-                header("Location: ../entrenador.php");
-                break;
+    if ($usuario) {
+        // Verificar contraseña (acepta hash o texto plano)
+        if (password_verify($contrasena, $usuario['Contrasena']) || $usuario['Contrasena'] === $contrasena) {
+
+            $_SESSION['nombre'] = $usuario['Nombre'];
+            $_SESSION['correo'] = $usuario['Correo'];
+
+            switch ($tipo_usuario) {
+                case 'cliente':
+                    $_SESSION['id_cliente'] = $usuario['Id_Cliente'];
+                    $_SESSION['rol'] = 'cliente';
+                    header("Location: ../cliente.php");
+                    break;
+
+                case 'administrador':
+                    $_SESSION['id_admin'] = $usuario['Id_Administrador'];
+                    $_SESSION['rol'] = 'admin';
+                    header("Location: ../index_admin.php");
+                    break;
+
+                case 'entrenador':
+                    $_SESSION['id_entrenador'] = $usuario['Id_Entrenador'];
+                    $_SESSION['rol'] = 'entrenador';
+                    header("Location: ../entrenador.php");
+                    break;
+            }
+            exit;
+        } else {
+            $error = "⚠️ Contraseña incorrecta";
         }
-        exit;
     } else {
-        $error = "Credenciales incorrectas";
+        $error = "⚠️ Usuario no encontrado";
     }
 }
 ?>
