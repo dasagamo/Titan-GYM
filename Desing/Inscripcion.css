@@ -1,0 +1,132 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, #0f0f0f, #1c1c1c);
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.registro-contenedor {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.registro-card {
+  background: #111;
+  padding: 40px 50px;
+  border-radius: 20px;
+  box-shadow: 0 0 25px rgba(255, 0, 0, 0.2);
+  color: #fff;
+  width: 380px;
+  transition: 0.3s;
+}
+
+.registro-card:hover {
+  box-shadow: 0 0 35px rgba(255, 0, 0, 0.4);
+}
+
+h2 {
+  text-align: center;
+  color: #e53935;
+  margin-bottom: 25px;
+  font-weight: 600;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+.grupo-input {
+  position: relative;
+  margin-bottom: 25px;
+}
+
+.grupo-input input {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-bottom: 2px solid #555;
+  background: transparent;
+  color: #fff;
+  font-size: 16px;
+  outline: none;
+  transition: 0.3s;
+}
+
+.grupo-input label {
+  position: absolute;
+  left: 10px;
+  top: 12px;
+  color: #888;
+  font-size: 14px;
+  transition: 0.3s;
+  pointer-events: none;
+}
+
+.grupo-input input:focus {
+  border-bottom: 2px solid #e53935;
+}
+
+.grupo-input input:focus + label,
+.grupo-input input:valid + label {
+  top: -10px;
+  left: 5px;
+  font-size: 12px;
+  color: #e53935;
+}
+
+.btn-rojo {
+  background: #e53935;
+  color: #fff;
+  border: none;
+  padding: 12px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  transition: 0.3s;
+}
+
+.btn-rojo:hover {
+  background: #b71c1c;
+}
+
+.mensaje {
+  margin-top: 15px;
+  text-align: center;
+  font-size: 14px;
+  color: #ccc;
+}
+
+.mensaje a {
+  color: #e53935;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.mensaje a:hover {
+  text-decoration: underline;
+}
+
+
+.caracteres-info {
+font-size: 0.8rem;
+margin-top: 0.3rem;
+display: block;
+}
+small {
+font-size: 0.8rem;
+opacity: 0.8;
+}
