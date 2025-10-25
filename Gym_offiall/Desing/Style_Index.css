@@ -1,376 +1,149 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: 'Poppins', sans-serif;
+:root{
+  --bg: #fff;
+  --accent: #222;
+  --muted: #666;
+  --card: #f9f9f9;
+  --radius: 12px;
+  --shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
-body {
-  background: linear-gradient(135deg, #0f0f0f, #1c1c1c);
-  color: #fff;
-  min-height: 100vh;
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family: Arial, Helvetica, sans-serif;
+  background:var(--bg);
+  color:var(--accent);
 }
 
-/* === ENCABEZADO === */
-header {
-  background: #111;
-  padding: 20px 40px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 0 25px rgba(255, 0, 0, 0.2);
-  border-bottom: 2px solid #e53935;
-  position: relative;
+/* HEADER */
+.site-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:15px 20px;
+  background:#eee;
+  position:relative;
+  flex-direction: row-reverse; 
 }
 
-header h1 {
-  color: #fff;
-  font-size: 2rem;
-  font-weight: 600;
+.gym-title{
+  margin:0;
+  font-size:22px;
+  font-weight:bold;
 }
 
-/* === BOTÓN MENÚ HAMBURGUESA === */
-.menu-btn {
-  width: 30px;
-  height: 25px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  cursor: pointer;
-  transition: 0.3s;
+/* Botón hamburguesa */
+.menu-btn{
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+.menu-btn .hamb{
+  width:25px;
+  height:3px;
+  background:#000;
+  border-radius:3px;
 }
 
-.menu-btn div {
-  height: 3px;
-  background: #e53935;
-  border-radius: 3px;
-  transition: 0.3s;
+/* Truco del checkbox */
+.menu-toggle{
+  display:none; /* ocultamos el checkbox */
 }
 
-.menu-btn.open div:nth-child(1) {
-  transform: rotate(45deg) translate(6px, 6px);
+/* NAV */
+.main-nav{
+  display:none;
+  position:absolute;
+  top:100%;   /* justo debajo del botón */
+  left:0;     /* alineado con el botón */
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:10px;
+  z-index:1000;
 }
 
-.menu-btn.open div:nth-child(2) {
-  opacity: 0;
+/* cuando el checkbox está checked => mostramos el nav */
+.menu-toggle:checked ~ .main-nav{
+  display:block;
 }
 
-.menu-btn.open div:nth-child(3) {
-  transform: rotate(-45deg) translate(6px, -6px);
+.main-nav ul{
+  list-style:none;
+  margin:0;
+  padding:0;
+}
+.main-nav li{
+  margin:10px 0;
+}
+.main-nav a{
+  text-decoration:none;
+  color:var(--accent);
+  font-weight:600;
 }
 
-/* === MENÚ LATERAL === */
-nav {
-  position: fixed;
-  top: 0;
-  left: -300px;
-  width: 280px;
-  height: 100vh;
-  background: #111;
-  box-shadow: 0 0 35px rgba(255, 0, 0, 0.3);
-  transition: 0.3s;
-  z-index: 1000;
-  padding: 80px 0 30px 0;
-  display: flex;
-  flex-direction: column;
-  border-right: 2px solid #e53935;
+/* PLANES */
+.container{padding:20px}
+.hero h2{margin:0 0 10px}
+.plans{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
+  gap:15px;
+}
+.plan-card{
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:15px;
+  box-shadow:var(--shadow);
+  text-align:center;
+}
+.plan-card .price{font-size:18px;font-weight:bold}
+.cta{
+  margin-top:10px;
+  padding:8px 12px;
+  background:#000;
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
 }
 
-nav.active {
-  left: 0;
+/* FOOTER */
+.site-footer{
+  margin-top:30px;
+  background:#eee;
+  padding:20px;
 }
+.footer-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(200px,1fr));
+  gap:15px;
+}
+.col h3{margin:0 0 5px}
+.col p{margin:0;font-size:14px;color:var(--muted)}
 
-nav a {
-  color: #ccc;
-  text-decoration: none;
-  padding: 15px 25px;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  transition: 0.3s;
-  border-bottom: 1px solid #222;
+.center{text-align:center}
+.socials{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin-top:10px;
 }
-
-nav a:hover {
-  background: rgba(229, 57, 53, 0.1);
-  color: #e53935;
-  padding-left: 30px;
+.social{
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  background:#fff;
+  border:1px solid #ccc;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
 }
-
-nav a i {
-  width: 20px;
-  text-align: center;
+.footer-bottom{
+  text-align:center;
+  margin-top:15px;
 }
-
-/* === BOTÓN INSCRIBIRSE ESPECIAL === */
-.btn-inscribirse {
-  background: #e53935;
-  color: white !important;
-  margin: 20px 15px 0 15px;
-  border-radius: 25px;
-  text-align: center;
-  justify-content: center;
-  box-shadow: 0 0 15px rgba(229, 57, 53, 0.3);
-  border: none !important;
-}
-
-.btn-inscribirse:hover {
-  background: #b71c1c !important;
-  box-shadow: 0 0 25px rgba(229, 57, 53, 0.5);
-  transform: translateY(-2px);
-}
-
-/* === SECCIÓN PLANES === */
-.planes {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 25px;
-  padding: 60px 40px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.plan {
-  background: #111;
-  padding: 30px;
-  border-radius: 20px;
-  text-align: center;
-  box-shadow: 0 0 25px rgba(255, 0, 0, 0.2);
-  transition: 0.3s;
-  border: 1px solid #222;
-  position: relative;
-}
-
-.plan:hover {
-  box-shadow: 0 0 35px rgba(255, 0, 0, 0.4);
-  transform: translateY(-10px);
-}
-
-.plan h2 {
-  color: #e53935;
-  font-size: 1.5rem;
-  margin-bottom: 15px;
-  font-weight: 600;
-}
-
-.plan p {
-  color: #ccc;
-  margin-bottom: 20px;
-  line-height: 1.6;
-}
-
-/* === PRECIOS === */
-.precio {
-  display: block;
-  font-size: 1.8rem;
-  font-weight: 600;
-  color: #e53935;
-  margin-top: 15px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-/* === PLAN DESTACADO === */
-.destacado {
-  border: 2px solid #e53935;
-  transform: scale(1.05);
-  position: relative;
-  overflow: hidden;
-}
-
-.destacado::before {
-  content: 'MÁS POPULAR';
-  position: absolute;
-  top: 15px;
-  right: -35px;
-  background: #e53935;
-  color: white;
-  padding: 8px 40px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  transform: rotate(45deg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  letter-spacing: 1px;
-}
-
-/* === PIE DE PÁGINA === */
-footer {
-  background: #111;
-  padding: 40px 20px;
-  text-align: center;
-  border-top: 2px solid #e53935;
-  margin-top: 40px;
-}
-
-.links {
-  margin-bottom: 20px;
-}
-
-.links a {
-  color: #ccc;
-  text-decoration: none;
-  margin: 0 15px;
-  transition: 0.3s;
-}
-
-.links a:hover {
-  color: #e53935;
-}
-
-footer p {
-  color: #ccc;
-  margin-bottom: 20px;
-  font-size: 1.1rem;
-}
-
-/* === ICONOS SOCIALES === */
-.social-icons {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-}
-
-.social-icons a {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 45px;
-  height: 45px;
-  background: #222;
-  border-radius: 50%;
-  color: #ccc;
-  text-decoration: none;
-  transition: 0.3s;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
-}
-
-.social-icons a:hover {
-  background: #e53935;
-  color: white;
-  transform: translateY(-3px);
-  box-shadow: 0 0 20px rgba(229, 57, 53, 0.4);
-}
-
-/* === RESPONSIVE === */
-@media (max-width: 768px) {
-  header {
-    padding: 15px 20px;
-  }
-  
-  header h1 {
-    font-size: 1.5rem;
-  }
-  
-  .planes {
-    padding: 40px 20px;
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-  
-  .plan {
-    padding: 25px;
-  }
-  
-  .destacado {
-    transform: scale(1.02);
-  }
-  
-  nav {
-    width: 250px;
-  }
-  
-  .social-icons a {
-    width: 40px;
-    height: 40px;
-  }
-}
-
-@media (max-width: 480px) {
-  header h1 {
-    font-size: 1.3rem;
-  }
-  
-  .planes {
-    padding: 30px 15px;
-  }
-  
-  .plan {
-    padding: 20px;
-  }
-  
-  .precio {
-    font-size: 1.5rem;
-  }
-  
-  .links a {
-    display: block;
-    margin: 10px 0;
-  }
-  
-  .social-icons {
-    gap: 15px;
-  }
-}
-
-/* === ANIMACIONES ADICIONALES === */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.plan {
-  animation: fadeInUp 0.6s ease-out;
-}
-
-.plan:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.plan:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-/* === OVERLAY PARA EL MENÚ === */
-nav::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  opacity: 0;
-  visibility: hidden;
-  transition: 0.3s;
-  z-index: -1;
-}
-
-nav.active::before {
-  opacity: 1;
-  visibility: visible;
-}
-
-/* === SCROLLBAR PERSONALIZADO === */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #111;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #e53935;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #b71c1c;
-}
+.footer-bottom a{text-decoration:none;color:var(--accent);font-weight:600}

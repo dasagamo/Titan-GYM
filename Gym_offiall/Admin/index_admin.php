@@ -22,7 +22,7 @@ if (!$conexion) die("Error: No se pudo conectar a la base de datos");
     <h1><i class="fas fa-dumbbell"></i> Panel Admin - Titán GYM</h1>
     <div class="user-info">
       <span>👤 <?php echo $_SESSION['nombre']; ?></span>
-      <a class="logout" href="logout.php">
+      <a class="logout" href="../forms/cerrar_sesion.php">
         <i class="fas fa-sign-out-alt"></i>Cerrar sesión
       </a>
     </div>

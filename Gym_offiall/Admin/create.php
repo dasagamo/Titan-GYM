@@ -18,15 +18,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modulo'])) {
         $pass = password_hash($_POST['contrasena'], PASSWORD_BCRYPT);
         $id_tipo = isset($_POST['id_tipo_membrecia']) && $_POST['id_tipo_membrecia'] !== '' ? (int)$_POST['id_tipo_membrecia'] : null;
 
-        mysqli_query($conexion, "INSERT INTO cliente (Nombre, Apellido, Telefono, Correo, Contrasena, Id_Tipo) 
-                                VALUES ('$nombre','$apellido','$telefono','$correo','$pass',3)");
+        // Insertar cliente (corregido el nombre de la columna Id_Tipo)
+        mysqli_query($conexion, "INSERT INTO cliente (Nombre, Apellido, Telefono, Correo, Contrasena) 
+                                VALUES ('$nombre','$apellido','$telefono','$correo','$pass')");
         $id_cliente = mysqli_insert_id($conexion);
 
         if ($id_tipo) {
-            // obtener duración
-            $res = mysqli_query($conexion, "SELECT Duracion FROM tipo_membrecia WHERE Id_Tipo_Membrecia = $id_tipo");
-            $row = mysqli_fetch_assoc($res);
-            $dur = $row['Duracion'] ?? 30;
+            // Usar duración por defecto de 30 días (no obtenemos de tipo_membrecia ya que no existe esa columna)
+            $dur = 30;
             $f_inicio = date('Y-m-d');
             $f_fin = date('Y-m-d', strtotime("+$dur days"));
 
@@ -48,8 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modulo'])) {
         $id_esp = !empty($_POST['id_especialidad']) ? (int)$_POST['id_especialidad'] : "NULL";
         $pass = password_hash($_POST['contrasena'], PASSWORD_BCRYPT);
 
-        mysqli_query($conexion, "INSERT INTO entrenador (Nombre, Apellido, Telefono, Correo, Contrasena, Id_Especialidad, Id_Tipo)
-                                VALUES ('$nombre','$apellido','$telefono','$correo','$pass',$id_esp,2)");
+        mysqli_query($conexion, "INSERT INTO entrenador (Nombre, Apellido, Telefono, Correo, Contrasena, Id_Especialidad)
+                                VALUES ('$nombre','$apellido','$telefono','$correo','$pass',$id_esp)");
         $msg = "Entrenador creado correctamente.";
     }
 
@@ -88,12 +87,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modulo'])) {
         $msg = "Especialidad creada correctamente.";
     }
 
-    // TIPOS MEMBRESIA
+    // TIPOS MEMBRESIA - CORREGIDO
     if ($mod === 'membrecias' && $_POST['accion'] === 'crear') {
         $nombre = mysqli_real_escape_string($conexion, $_POST['nombre_tipo']);
         $precio = (float)$_POST['precio'];
-        $dur = isset($_POST['duracion']) && $_POST['duracion'] !== '' ? (int)$_POST['duracion'] : 30;
-        mysqli_query($conexion, "INSERT INTO tipo_membrecia (Nombre_Tipo, Precio, Duracion) VALUES ('$nombre',$precio,$dur)");
+        
+        // La duración no se guarda en tipo_membrecia, solo en membrecia individual
+        // Según el código de update, tipo_membrecia solo tiene Nombre_Tipo y Precio
+        mysqli_query($conexion, "INSERT INTO tipo_membrecia (Nombre_Tipo, Precio) VALUES ('$nombre',$precio)");
         $msg = "Tipo de membresía creado correctamente.";
     }
 
@@ -237,7 +238,7 @@ $ok = $_GET['ok'] ?? '';
               <input type="hidden" name="accion" value="crear">
               <label>Nombre</label><input name="nombre_tipo" required>
               <label>Precio</label><input type="number" step="0.01" name="precio" required>
-              <label>Duración (días)</label><input type="number" name="duracion" value="30" min="1">
+              <!-- Quitamos el campo duración ya que no pertenece a tipo_membrecia -->
               <button class="btn-save">Guardar tipo</button>
             </form>
           </div>
