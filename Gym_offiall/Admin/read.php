@@ -1,7 +1,9 @@
 <?php
 session_start();
-if (!isset($_SESSION['id_administrador'])) {
-  header('Location: forms/login.php');
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+if (!isset($_SESSION['Id_Admin'])) {
+  header('Location: ../forms/login.php');
   exit();
 }
 require_once "../Conexion.php";
@@ -104,20 +106,27 @@ $mod = $_GET['modulo'] ?? 'clientes';
 
         if ($mod === 'inventario') {
           $res = mysqli_query($conexion, "
-            SELECT p.Id_Producto, p.Nombre, p.Marca, i.Cantidad, i.Ubicacion
+            SELECT 
+              p.Id_Producto, 
+              p.Nombre, 
+              p.Marca, 
+              p.Stock, 
+              c.Nombre AS Categoria
             FROM producto p
-            JOIN inventario i ON p.Id_Producto = i.Id_Producto
+            LEFT JOIN categoria_producto c ON p.Id_Categoria = c.Id_Categoria
           ");
-          echo "<table><tr><th>ID</th><th>Nombre</th><th>Marca</th><th>Cantidad</th><th>Ubicación</th></tr>";
+
+          echo "<table class='table table-striped'><tr><th>ID</th><th>Nombre</th><th>Marca</th><th>Stock</th><th>Categoría</th></tr>";
+
           while ($r = mysqli_fetch_assoc($res)) {
             echo "<tr>
-                    <td>{$r['Id_Producto']}</td>
-                    <td>{$r['Nombre']}</td>
-                    <td>{$r['Marca']}</td>
-                    <td>{$r['Cantidad']}</td>
-                    <td>{$r['Ubicacion']}</td>
-                  </tr>";
-          }
+                  <td>{$r['Id_Producto']}</td>
+                  <td>{$r['Nombre']}</td>
+                  <td>{$r['Marca']}</td>
+                  <td>{$r['Stock']}</td>
+                  <td>" . ($r['Categoria'] ?? 'Sin categoría') . "</td>
+                </tr>";
+          }   
           echo "</table>";
         }
 
