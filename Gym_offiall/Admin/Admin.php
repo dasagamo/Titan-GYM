@@ -1,9 +1,9 @@
 <?php
 session_start();
 
-if (!isset($_SESSION['id_administrador'])) {
+if (!isset($_SESSION['Id_Admin'])) {
     $_SESSION = [];
-    header("Location: forms/login.php");
+    header("Location: ../forms/login.php");
     exit();
 }
 

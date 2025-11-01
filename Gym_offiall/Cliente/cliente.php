@@ -1,6 +1,8 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 session_start();
-include 'conexion.php';
+include '../Conexion.php';
 
 // ———— VALIDAR SESIÓN ————
 if (!isset($_SESSION['id_cliente'])) {
@@ -172,13 +174,13 @@ unset($_SESSION['mensaje_exito'], $_SESSION['mensaje_error']);
     <meta charset="UTF-8">
     <title>Panel Cliente - Titán GYM</title>
     <link rel="icon" href="Imagenes/favicon_1.png">
-    <link rel="stylesheet" href="Desing/cliente.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="../Desing/cliente.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 <header class="site-header">
     <h1><i class="fas fa-dumbbell"></i> Panel Cliente - Titán GYM</h1>
-    <form action="cerrar_sesion.php" method="post">
+    <form action="../forms/cerrar_sesion.php" method="post">
         <button type="submit" class="btn btn-cerrar"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
     </form>
 </header>

@@ -1,7 +1,7 @@
 <?php
 // index_admin.php
 session_start();
-if (!isset($_SESSION['id_administrador'])) {
+if (!isset($_SESSION['Id_Admin'])) {
     header('Location: ../forms/login.php');
     exit();
 }

@@ -1,7 +1,7 @@
 <?php
 // delete.php
 session_start();
-if (!isset($_SESSION['id_administrador'])) { header('Location: forms/login.php'); exit(); }
+if (!isset($_SESSION['Id_Admin'])) { header('Location: ../forms/login.php'); exit(); }
 require_once "../Conexion.php";
 
 if (!$conexion) die("Error: No se pudo conectar a la base de datos");
