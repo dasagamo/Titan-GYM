@@ -1,16 +1,20 @@
 <?php
 session_start();
+session_unset(); // Limpia cualquier sesión anterior
+session_destroy();
+session_start(); // Crea una nueva sesión limpia
+session_start();
 require_once "../Conexion.php"; // Fix capitalization to match actual file
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $correo = mysqli_real_escape_string($conexion, $_POST['correo']);
     $contrasena = $_POST['password'];
 
-    $tablas = [
-        'cliente' => ['id' => 'Id_Cliente', 'nombre' => 'Nombre', 'redirect' => '../cliente.php'],
-        'administrador' => ['id' => 'Id_Administrador', 'nombre' => 'Nombre', 'redirect' => '../index_admin.php'],
-        'entrenador' => ['id' => 'Id_Entrenador', 'nombre' => 'Nombre', 'redirect' => '../entrenador.php']
-    ];
+$tablas = [
+    'cliente' => ['id' => 'Id_Cliente', 'nombre' => 'Nombre', 'redirect' => '../Cliente/cliente.php'],
+    'administrador' => ['id' => 'Id_Admin', 'nombre' => 'Nombre', 'redirect' => '../Admin/index_admin.php'],
+    'entrenador' => ['id' => 'Id_Entrenador', 'nombre' => 'Nombre', 'redirect' => '../Entrenador/index.php']
+];
 
     $usuario = null;
     $tipo_usuario = null;
@@ -35,11 +39,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 case 'cliente':
                     $_SESSION['id_cliente'] = $usuario['Id_Cliente'];
                     $_SESSION['rol'] = 'cliente';
-                    header("Location: ../Cliente/index.php"); // Update path
+                    header("Location: ../Cliente/cliente.php"); // Update path
                     break;
 
                 case 'administrador':
-                    $_SESSION['id_administrador'] = $usuario['Id_Administrador']; // Fix session variable name
+                    $_SESSION['Id_Admin'] = $usuario['Id_Admin'];  // Fix session variable name
                     $_SESSION['rol'] = 'admin';
                     header("Location: ../Admin/index_admin.php"); // Fix admin path
                     break;
@@ -88,10 +92,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <button type="submit" class="btn-login">INGRESAR</button>
         </form>
         <div class="registro-texto">
-            ¿No tienes cuenta? <a href="registro.php">Regístrate aquí</a>
+            ¿No tienes cuenta? <a href="Inscripcion.php">Regístrate aquí</a>
         </div>
         <div class="registro-texto">
-            <a href="../index.php">← Volver al inicio</a>
+            <a href="../Index.php">← Volver al inicio</a>
         </div>
     </div>
 </body>

@@ -1,6 +1,8 @@
 <?php
 session_start();
-include '../conexion.php';
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+include '../Conexion.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $nombre = $_POST['nombre'];
@@ -79,7 +81,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             ¿Ya tienes cuenta? <a href="login.php">Inicia sesión aquí</a>
         </div>
         <div class="registro-texto">
-            <a href="../index_cliente.php">← Volver al inicio</a>
+            <a href="../index.php">← Volver al inicio</a>
         </div>
     </div>
 

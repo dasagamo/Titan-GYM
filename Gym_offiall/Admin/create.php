@@ -1,8 +1,17 @@
 <?php
 // create.php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 session_start();
-if (!isset($_SESSION['id_administrador'])) { header('Location: forms/login.php'); exit(); }
+if (!isset($_SESSION['Id_Admin'])) {
+  header('Location: ../forms/login.php');
+  exit();
+}
+
 require_once "../Conexion.php";
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 if (!$conexion) die("Error: No se pudo conectar a la base de datos");
 
 $msg = '';
@@ -16,15 +25,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modulo'])) {
         $telefono = mysqli_real_escape_string($conexion, $_POST['telefono']);
         $correo = mysqli_real_escape_string($conexion, $_POST['correo']);
         $pass = password_hash($_POST['contrasena'], PASSWORD_BCRYPT);
-        $id_tipo = isset($_POST['id_tipo_membrecia']) && $_POST['id_tipo_membrecia'] !== '' ? (int)$_POST['id_tipo_membrecia'] : null;
+        $id_tipo = !empty($_POST['id_tipo_membrecia']) ? (int)$_POST['id_tipo_membrecia'] : null;
 
-        // Insertar cliente (corregido el nombre de la columna Id_Tipo)
         mysqli_query($conexion, "INSERT INTO cliente (Nombre, Apellido, Telefono, Correo, Contrasena) 
-                                VALUES ('$nombre','$apellido','$telefono','$correo','$pass')");
+                                 VALUES ('$nombre','$apellido','$telefono','$correo','$pass')");
         $id_cliente = mysqli_insert_id($conexion);
 
         if ($id_tipo) {
-            // Usar duración por defecto de 30 días (no obtenemos de tipo_membrecia ya que no existe esa columna)
             $dur = 30;
             $f_inicio = date('Y-m-d');
             $f_fin = date('Y-m-d', strtotime("+$dur days"));
@@ -48,23 +55,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modulo'])) {
         $pass = password_hash($_POST['contrasena'], PASSWORD_BCRYPT);
 
         mysqli_query($conexion, "INSERT INTO entrenador (Nombre, Apellido, Telefono, Correo, Contrasena, Id_Especialidad)
-                                VALUES ('$nombre','$apellido','$telefono','$correo','$pass',$id_esp)");
+                                 VALUES ('$nombre','$apellido','$telefono','$correo','$pass',$id_esp)");
         $msg = "Entrenador creado correctamente.";
     }
 
-    // PRODUCTO + INVENTARIO
-    if ($mod === 'inventario' && $_POST['accion'] === 'crear') {
-        $nombre = mysqli_real_escape_string($conexion, $_POST['nombre']);
-        $marca = mysqli_real_escape_string($conexion, $_POST['marca']);
-        $cantidad = (int)$_POST['cantidad'];
-        $ubicacion = mysqli_real_escape_string($conexion, $_POST['ubicacion']);
-        $id_admin = $_SESSION['id_administrador'];
+// === CREACIÓN DE PRODUCTO ===
+if ($mod === 'inventario' && $_POST['accion'] === 'crear') {
+    // 1️⃣ Escapar los datos recibidos del formulario
+    $nombre = mysqli_real_escape_string($conexion, $_POST['nombre']);
+    $marca = mysqli_real_escape_string($conexion, $_POST['marca']);
+    $descripcion = mysqli_real_escape_string($conexion, $_POST['descripcion']);
+    $precio = (float)$_POST['precio'];
+    $stock = (int)$_POST['stock'];
+    $categoria_nombre = mysqli_real_escape_string($conexion, $_POST['categoria']);
 
-        mysqli_query($conexion, "INSERT INTO producto (Nombre, Marca, Id_Administrador) VALUES ('$nombre','$marca',$id_admin)");
-        $id_producto = mysqli_insert_id($conexion);
-        mysqli_query($conexion, "INSERT INTO inventario (Id_Producto, Cantidad, Ubicacion) VALUES ($id_producto,$cantidad,'$ubicacion')");
-        $msg = "Producto e inventario creados correctamente.";
+    // 2️⃣ Verificar si la categoría existe o crearla
+    $res = mysqli_query($conexion, "SELECT Id_Categoria FROM categoria_producto WHERE Nombre = '$categoria_nombre'");
+    if (mysqli_num_rows($res) > 0) {
+        $fila = mysqli_fetch_assoc($res);
+        $id_categoria = $fila['Id_Categoria'];
+    } else {
+        mysqli_query($conexion, "INSERT INTO categoria_producto (Nombre) VALUES ('$categoria_nombre')");
+        $id_categoria = mysqli_insert_id($conexion);
     }
+
+    // 3️⃣ Manejar la imagen (opcional)
+    $ruta_bd = NULL; // Valor por defecto
+    if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
+        // Carpeta destino (asegúrate que exista dentro de tu proyecto)
+        $dir_destino = __DIR__ . "/../Tienda/Imagenes_productos/";
+
+        // Crear carpeta si no existe
+        if (!file_exists($dir_destino)) {
+            mkdir($dir_destino, 0777, true);
+        }
+
+        // Limpiar y generar un nombre seguro
+        $nombre_img = basename($_FILES['imagen']['name']);
+        $nombre_img = preg_replace("/[^a-zA-Z0-9_\.-]/", "_", $nombre_img);
+
+        // Evitar colisiones de nombre
+        $nombre_unico = time() . "_" . $nombre_img;
+
+        // Ruta completa en el servidor
+        $ruta_img = $dir_destino . $nombre_unico;
+
+        // Mover archivo subido
+        if (move_uploaded_file($_FILES['imagen']['tmp_name'], $ruta_img)) {
+            // Ruta que se guardará en la BD (ruta relativa)
+            $ruta_bd = "Tienda/Imagenes_productos/" . $nombre_unico;
+        } else {
+            echo "<p style='color:red;'>⚠️ Error al mover la imagen al destino: $ruta_img</p>";
+        }
+    } else {
+        echo "<p style='color:orange;'>⚠️ No se subió ninguna imagen o hubo error (" . ($_FILES['imagen']['error'] ?? 'sin archivo') . ").</p>";
+    }
+
+    // 4️⃣ Insertar el producto (ya incluye la ruta de imagen)
+    $sql_insert = "INSERT INTO producto (Nombre, Marca, Descripcion, Precio, Stock, Ruta_Imagen, Id_Categoria)
+                   VALUES ('$nombre', '$marca', '$descripcion', $precio, $stock, " .
+                   ($ruta_bd ? "'$ruta_bd'" : "NULL") . ", $id_categoria)";
+
+    if (mysqli_query($conexion, $sql_insert)) {
+        $msg = "✅ Producto creado correctamente.";
+        header("Location: create.php?modulo=$mod&ok=" . urlencode($msg));
+        exit();
+    } else {
+        echo "<p style='color:red;'>❌ Error al insertar producto: " . mysqli_error($conexion) . "</p>";
+    }
+}
+
+
 
     // PROVEEDORES
     if ($mod === 'proveedores' && $_POST['accion'] === 'crear') {
@@ -75,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modulo'])) {
         $precio = (float)$_POST['precio_proveedor'];
 
         mysqli_query($conexion, "INSERT INTO proveedor (Nombre, Telefono, Correo, Id_Producto, Precio_Proveedor)
-                                VALUES ('$nombre','$telefono','$correo',$id_producto,$precio)");
+                                 VALUES ('$nombre','$telefono','$correo',$id_producto,$precio)");
         $msg = "Proveedor creado correctamente.";
     }
 
@@ -87,18 +148,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modulo'])) {
         $msg = "Especialidad creada correctamente.";
     }
 
-    // TIPOS MEMBRESIA - CORREGIDO
+    // TIPOS DE MEMBRESÍA
     if ($mod === 'membrecias' && $_POST['accion'] === 'crear') {
         $nombre = mysqli_real_escape_string($conexion, $_POST['nombre_tipo']);
         $precio = (float)$_POST['precio'];
-        
-        // La duración no se guarda en tipo_membrecia, solo en membrecia individual
-        // Según el código de update, tipo_membrecia solo tiene Nombre_Tipo y Precio
+
         mysqli_query($conexion, "INSERT INTO tipo_membrecia (Nombre_Tipo, Precio) VALUES ('$nombre',$precio)");
         $msg = "Tipo de membresía creado correctamente.";
     }
 
-    // redirigir o mostrar mensaje
     header("Location: create.php?modulo=$mod&ok=" . urlencode($msg));
     exit();
 }
@@ -107,6 +165,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modulo'])) {
 $modulo_sel = $_GET['modulo'] ?? '';
 $ok = $_GET['ok'] ?? '';
 ?>
+
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -123,7 +183,7 @@ $ok = $_GET['ok'] ?? '';
     <aside class="sidebar">
       <a href="create.php?modulo=clientes">Clientes</a>
       <a href="create.php?modulo=entrenadores">Entrenadores</a>
-      <a href="create.php?modulo=inventario">Productos / Inventario</a>
+      <a href="create.php?modulo=inventario">Productos</a>
       <a href="create.php?modulo=proveedores">Proveedores</a>
       <a href="create.php?modulo=especialidades">Especialidades</a>
       <a href="create.php?modulo=membrecias">Tipos Membresía</a>
@@ -180,20 +240,39 @@ $ok = $_GET['ok'] ?? '';
           </div>
         <?php endif; ?>
 
-        <?php if($modulo_sel === 'inventario'): ?>
-          <h2>Nuevo Producto / Inventario</h2>
+        <?php if($modulo_sel === 'inventario'):?>
+          <h2>Nuevo Producto</h2>
           <div class="form-card">
-            <form method="POST">
+            <form method="POST" enctype="multipart/form-data">
               <input type="hidden" name="modulo" value="inventario">
               <input type="hidden" name="accion" value="crear">
-              <label>Nombre producto</label><input name="nombre" required>
-              <label>Marca</label><input name="marca">
-              <label>Cantidad</label><input type="number" name="cantidad" value="1" required>
-              <label>Ubicación</label><input name="ubicacion">
+
+              <label>Nombre del producto</label>
+              <input type="text" name="nombre" required>
+
+              <label>Marca</label>
+              <input type="text" name="marca">
+
+              <label>Descripción</label>
+              <textarea name="descripcion" rows="3" placeholder="Descripción del producto..."></textarea>
+
+              <label>Precio</label>
+              <input type="number" name="precio" step="0.01" required>
+
+              <label>Stock disponible</label>
+              <input type="number" name="stock" min="1" required>
+
+              <label>Categoría</label>
+              <input type="text" name="categoria" placeholder="Ejemplo: Suplementos" required>
+
+              <label>Imagen del producto</label>
+              <input type="file" name="imagen" accept="image/*">
+
               <button class="btn-save">Guardar producto</button>
             </form>
           </div>
         <?php endif; ?>
+
 
         <?php if($modulo_sel === 'proveedores'): ?>
           <h2>Nuevo Proveedor</h2>

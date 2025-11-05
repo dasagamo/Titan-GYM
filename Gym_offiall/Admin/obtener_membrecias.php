@@ -1,7 +1,7 @@
 <?php
 // obtener_membrecias.php
 session_start();
-if (!isset($_SESSION['id_administrador'])) {
+if (!isset($_SESSION['Id_Admin'])) {
     http_response_code(401);
     echo json_encode(['error' => 'No autorizado']);
     exit();

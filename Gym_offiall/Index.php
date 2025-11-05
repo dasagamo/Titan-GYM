@@ -24,7 +24,7 @@
   <!-- Menú lateral -->
   <nav id="menu">
     <a href="#"><i class="fas fa-tags"></i> Promociones</a>
-    <a href="#"><i class="fas fa-store"></i> Tienda</a>
+    <a href="Tienda/Index.php"><i class="fas fa-store"></i> Tienda</a>
     <a href="#"><i class="fas fa-dumbbell"></i> Clases Promocionales</a>
     <a href="#"><i class="fas fa-user-friends"></i> Clase Personalizada</a>
     <a href="forms/login.php"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a>
